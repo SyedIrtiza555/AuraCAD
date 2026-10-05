@@ -1,0 +1,34 @@
+--- src/components/views/Table.tsx
++++ src/components/views/Table.tsx
+@@ -9,12 +9,13 @@
+   onOrderClick: (order: Order) => void;
+   sortConfig: { key: keyof Order; direction: 'asc' | 'desc' } | null;
+   onSort: (key: keyof Order) => void;
++  onStatusChange?: (orderId: string, newStatus: OrderStatus) => void;
+ }
+ 
+-export function OrderTable({ orders, onOrderClick, sortConfig, onSort, getClientName }: OrderTableProps) {
++export function OrderTable({ orders, onOrderClick, sortConfig, onSort, getClientName, onStatusChange }: OrderTableProps) {
+   const getStatusColor = (status: OrderStatus) => {
+@@ -70,3 +71,21 @@
+                 <td className="py-5 px-6">
+-                  <span className={`text-[10px] px-3 py-1 border rounded-full font-bold uppercase tracking-widest ${getStatusColor(order.status)}`}>
++                  <span 
++                    className={`text-[10px] px-3 py-1 border rounded-full font-bold uppercase tracking-widest ${getStatusColor(order.status)}`}
++                    onDragOver={(e) => {
++                      e.preventDefault();
++                      e.dataTransfer.dropEffect = 'move';
++                    }}
++                    onDrop={(e) => {
++                      e.preventDefault();
++                      e.stopPropagation();
++                      if (!onStatusChange) return;
++                      const dataStr = e.dataTransfer.getData('application/json');
++                      if (!dataStr) return;
++                      const data = JSON.parse(dataStr);
++                      if (data.type === 'order' && data.id && data.id !== order.id) {
++                        onStatusChange(data.id, order.status);
++                      }
++                    }}
++                  >
+                     {order.status}

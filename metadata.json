@@ -1,0 +1,6 @@
+{
+  "name": "AuraCAD v1",
+  "description": "Playful Daisy UI inspired jewelry CAD studio engine with liquid glass aesthetics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

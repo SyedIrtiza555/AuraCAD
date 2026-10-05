@@ -1,0 +1,31 @@
+--- src/components/views/Calendar.tsx
++++ src/components/views/Calendar.tsx
+@@ -79,4 +79,19 @@
+               const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+-                            
++
++              const handleDragOver = (e: React.DragEvent) => {
++                e.preventDefault();
++                e.dataTransfer.dropEffect = 'move';
++              };
++
++              const handleDrop = (e: React.DragEvent) => {
++                e.preventDefault();
++                if (!d || !onDateChange) return;
++                const dataStr = e.dataTransfer.getData('application/json');
++                if (!dataStr) return;
++                const data = JSON.parse(dataStr);
++                if (data.type === 'order' && data.id) {
++                  const newDate = new Date(year, month, d).toLocaleDateString('en-CA');
++                  onDateChange(data.id, newDate);
++                }
++              };
++
+               return (
+-                <div key={`${i}-${j}`} className={`bg-[#0A0A0A] min-h-[120px] p-2 hover:bg-zinc-900/50 transition-colors ${!d ? 'opacity-30' : ''}`}>
++                <div 
++                  key={`${i}-${j}`} 
++                  className={`bg-[#0A0A0A] min-h-[120px] p-2 hover:bg-zinc-900/50 transition-colors ${!d ? 'opacity-30' : ''}`}
++                  onDragOver={handleDragOver}
++                  onDrop={handleDrop}
++                >

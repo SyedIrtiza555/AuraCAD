@@ -1,0 +1,6 @@
+            {week.map((d, j) => {
+              const dayOrders = d ? getOrdersForDay(d) : [];
+              const isToday = d === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+              
+              return (
+                <div key={`${i}-${j}`} className={`bg-[#0A0A0A] min-h-[120px] p-2 hover:bg-zinc-900/50 transition-colors ${!d ? 'opacity-30' : ''}`}>
