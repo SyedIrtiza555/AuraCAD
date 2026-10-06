@@ -14,7 +14,9 @@
 | `react` / `react-dom` | `^19.0.1` | Modern concurrent rendering, transitions, and component composition |
 | `vite` | `^6.2.3` | Instant HMR (<700ms), lightning-fast ES module bundler |
 | `tailwindcss` / `@tailwindcss/vite` | `^4.1.14` | High-performance CSS engine with atomic utility tokens and native glassmorphism styling |
-| `@google/genai` | `^2.4.0` | Official Google Gemini SDK for CAD anomaly detection, revision summaries, and prompt engineering |
+| `three` / `@types/three` | `^0.186.1` | Procedural 3D WebGL CAD jewelry inspector with PBR alloy metals & refractive gemstones |
+| `@tanstack/react-table` | `^8.21.3` | High-performance headless data table with multi-sort, batch actions, and density toggle |
+| `dexie` / `dexie-react-hooks` | `^4.4.6` | Offline-first IndexedDB persistence engine with zero data dead-ends |
 | `motion` (Framer Motion) | `^12.23.24` | Fluid liquid animations, accordion peeks, and modal transitions |
 | `lucide-react` | `^0.546.0` | Clean vector iconography aligned with luxury jewelry metaphors |
 | `@radix-ui/react-tabs` | `^1.1.21` | Accessible primitive for multi-module switching |
