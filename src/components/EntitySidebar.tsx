@@ -44,6 +44,7 @@ import { OrderStatusBadge } from './OrderStatusBadge';
 import { MiniTimelineProgressBar } from './MiniTimelineProgressBar';
 import { OrderPictureCarousel } from './OrderPictureCarousel';
 import { DesignerFeedbackHub } from './DesignerFeedbackHub';
+import { Jewelry3DViewer } from './Jewelry3DViewer';
 import { AuraColorId, AURA_PALETTE, ALL_AURA_COLORS, getOrderAura } from '../theme/auraTheme';
 
 export type PeekMode = 'sidebar' | 'center';
@@ -127,6 +128,7 @@ export function EntitySidebar({
 
   // Drag and drop for images
   const [isDragging, setIsDragging] = useState(false);
+  const [visualMode, setVisualMode] = useState<'3d' | '2d'>('3d');
 
   // Sync form when active entity changes
   useEffect(() => {
@@ -641,36 +643,74 @@ export function EntitySidebar({
                     </div>
                   </div>
 
-                  {/* CAD Images Carousel & Dropzone */}
+                  {/* CAD Visuals: Interactive 3D WebGL Model & 2D Renders */}
                   <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                      Visual Assets & Renders ({orderForm.images?.length || 0})
-                    </label>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                        Visual Assets & 3D Inspection
+                      </label>
+                      <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                        <button
+                          type="button"
+                          onClick={() => setVisualMode('3d')}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
+                            visualMode === '3d'
+                              ? 'bg-white text-slate-900 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          3D WebGL
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setVisualMode('2d')}
+                          className={`px-2 py-0.5 rounded-md text-[10px] font-semibold transition-all ${
+                            visualMode === '2d'
+                              ? 'bg-white text-slate-900 shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800'
+                          }`}
+                        >
+                          2D Photos ({orderForm.images?.length || 0})
+                        </button>
+                      </div>
+                    </div>
 
-                    {orderForm.images && orderForm.images.length > 0 && (
-                      <div className="mb-3 rounded-2xl overflow-hidden border border-slate-200">
-                        <OrderPictureCarousel 
-                          images={orderForm.images}
-                          title={orderForm.title || 'Preview'}
-                          aspectRatio="video"
-                          compact={false}
-                          allowZoom={true}
+                    {visualMode === '3d' ? (
+                      <div className="mb-3">
+                        <Jewelry3DViewer
+                          orderTitle={orderForm.title}
+                          orderType={orderForm.orderType}
+                          height={280}
                         />
                       </div>
-                    )}
+                    ) : (
+                      <>
+                        {orderForm.images && orderForm.images.length > 0 && (
+                          <div className="mb-3 rounded-2xl overflow-hidden border border-slate-200">
+                            <OrderPictureCarousel 
+                              images={orderForm.images}
+                              title={orderForm.title || 'Preview'}
+                              aspectRatio="video"
+                              compact={false}
+                              allowZoom={true}
+                            />
+                          </div>
+                        )}
 
-                    <div 
-                      onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-                      onDragLeave={() => setIsDragging(false)}
-                      onDrop={handleDropFiles}
-                      className={`p-4 rounded-xl border border-dashed text-center transition-all cursor-pointer ${
-                        isDragging ? 'border-[#ff943c] bg-amber-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100/70'
-                      }`}
-                    >
-                      <Upload size={18} className="mx-auto text-slate-400 mb-1" />
-                      <p className="text-xs font-semibold text-slate-700">Drag & drop CAD renders here</p>
-                      <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WebP supported</p>
-                    </div>
+                        <div 
+                          onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+                          onDragLeave={() => setIsDragging(false)}
+                          onDrop={handleDropFiles}
+                          className={`p-4 rounded-xl border border-dashed text-center transition-all cursor-pointer ${
+                            isDragging ? 'border-[#ff943c] bg-amber-50' : 'border-slate-300 bg-slate-50 hover:bg-slate-100/70'
+                          }`}
+                        >
+                          <Upload size={18} className="mx-auto text-slate-400 mb-1" />
+                          <p className="text-xs font-semibold text-slate-700">Drag & drop CAD renders here</p>
+                          <p className="text-[10px] text-slate-400 mt-0.5">PNG, JPG, WebP supported</p>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   {/* Notes */}

@@ -15,6 +15,20 @@ import { ComplaintsView } from './components/views/ComplaintsView';
 import { AuraColorRule } from './theme/auraTheme';
 import { v4 as uuidv4 } from 'uuid';
 import { CommandPalette } from './components/CommandPalette';
+import { useLiveQuery } from 'dexie-react-hooks';
+import {
+  db,
+  initializeDatabase,
+  dbAddOrder,
+  dbUpdateOrder,
+  dbDeleteOrder,
+  dbAddClient,
+  dbUpdateClient,
+  dbAddProspect,
+  dbUpdateProspect,
+  dbConvertProspectToOrder,
+  resetDatabaseToDefaults
+} from './db/database';
 import { INITIAL_ORDERS, INITIAL_CLIENTS, INITIAL_PROSPECTS } from './data';
 import { Order, Client, OrderStatus, OrderType, ORDER_TYPES, Prospect, STATUSES, ViewPreset, detectOrderType } from './types';
 import { 
@@ -38,9 +52,34 @@ import {
 } from 'lucide-react';
 
 export default function App() {
-  const [orders, setOrders] = useState<Order[]>(INITIAL_ORDERS);
-  const [clients, setClients] = useState(INITIAL_CLIENTS);
-  const [prospects, setProspects] = useState<Prospect[]>(INITIAL_PROSPECTS);
+  // Dexie.js Reactive Offline Persistence Layer
+  useEffect(() => {
+    initializeDatabase();
+  }, []);
+
+  const liveOrders = useLiveQuery(() => db.orders.toArray(), []);
+  const liveClients = useLiveQuery(() => db.clients.toArray(), []);
+  const liveProspects = useLiveQuery(() => db.prospects.toArray(), []);
+
+  const [localOrders, setLocalOrders] = useState<Order[]>(INITIAL_ORDERS);
+  const [localClients, setLocalClients] = useState<Client[]>(INITIAL_CLIENTS);
+  const [localProspects, setLocalProspects] = useState<Prospect[]>(INITIAL_PROSPECTS);
+
+  const orders = liveOrders && liveOrders.length > 0 ? liveOrders : localOrders;
+  const clients = liveClients && liveClients.length > 0 ? liveClients : localClients;
+  const prospects = liveProspects && liveProspects.length > 0 ? liveProspects : localProspects;
+
+  const setOrders = (val: Order[] | ((prev: Order[]) => Order[])) => {
+    setLocalOrders(val);
+  };
+  const setClients = (val: Client[] | ((prev: Client[]) => Client[])) => {
+    setLocalClients(val);
+  };
+  const setProspects = (val: Prospect[] | ((prev: Prospect[]) => Prospect[])) => {
+    setLocalProspects(val);
+  };
+
+  const [focusedOrderIndex, setFocusedOrderIndex] = useState<number>(0);
 
   // Persistent entity inspector state (Orders & Clients in sidebar)
   const [activeEntity, setActiveEntity] = useState<ActiveEntity | null>(null);
@@ -92,49 +131,25 @@ export default function App() {
     localStorage.setItem('theme', theme);
     if (theme === 'light') {
       document.body.classList.add('theme-light');
+      document.body.classList.remove('theme-dark');
     } else {
       document.body.classList.remove('theme-light');
+      document.body.classList.add('theme-dark');
     }
   }, [theme]);
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen(prev => !prev);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        setActiveEntity({ type: 'order', isNew: true });
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
   const handleSaveOrder = (orderData: Partial<Order>) => {
-    if (activeEntity?.type === 'order' && activeEntity.id) {
-      setOrders(orders.map(o => {
-        if (o.id === activeEntity.id) {
-          const updated = { ...o, ...orderData } as Order;
-          if (o.status !== updated.status) {
-            updated.history = [...(o.history || []), { status: updated.status, date: new Date().toISOString() }];
-          }
-          return updated;
+    const targetId = activeEntity?.type === 'order' && activeEntity.id ? activeEntity.id : selectedOrder?.id;
+    if (targetId) {
+      const existing = orders.find(o => o.id === targetId);
+      if (existing) {
+        const updated = { ...existing, ...orderData } as Order;
+        if (existing.status !== updated.status) {
+          updated.history = [...(existing.history || []), { status: updated.status, date: new Date().toISOString() }];
         }
-        return o;
-      }));
-    } else if (selectedOrder) {
-      setOrders(orders.map(o => {
-        if (o.id === selectedOrder.id) {
-          const updated = { ...o, ...orderData } as Order;
-          if (o.status !== updated.status) {
-            updated.history = [...(o.history || []), { status: updated.status, date: new Date().toISOString() }];
-          }
-          return updated;
-        }
-        return o;
-      }));
+        dbUpdateOrder(targetId, updated);
+        setOrders(orders.map(o => o.id === targetId ? updated : o));
+      }
     } else {
       const newOrder: Order = {
         ...orderData,
@@ -147,18 +162,15 @@ export default function App() {
         ],
         history: [{ status: orderData.status || 'Inbox', date: new Date().toISOString() }]
       } as Order;
+      dbAddOrder(newOrder);
       setOrders([newOrder, ...orders]);
     }
   };
 
   const handleSaveClient = (clientData: Partial<Client>) => {
     if (activeEntity?.type === 'client' && activeEntity.id) {
-      setClients(clients.map(c => {
-        if (c.id === activeEntity.id) {
-          return { ...c, ...clientData } as Client;
-        }
-        return c;
-      }));
+      dbUpdateClient(activeEntity.id, clientData);
+      setClients(clients.map(c => c.id === activeEntity.id ? { ...c, ...clientData } as Client : c));
     } else {
       const newClient: Client = {
         id: `CLI-00${clients.length + 1}`,
@@ -168,11 +180,13 @@ export default function App() {
         status: clientData.status || 'Active',
         notes: clientData.notes || ''
       };
+      dbAddClient(newClient);
       setClients([newClient, ...clients]);
     }
   };
 
   const handleStatusChange = (orderId: string, newStatus: OrderStatus) => {
+    dbUpdateOrder(orderId, { status: newStatus });
     setOrders(orders.map(o => {
       if (o.id === orderId && o.status !== newStatus) {
         return { 
@@ -185,7 +199,14 @@ export default function App() {
     }));
   };
 
+  const handleBatchStatusChange = (orderIds: string[], newStatus: OrderStatus) => {
+    orderIds.forEach(id => {
+      handleStatusChange(id, newStatus);
+    });
+  };
+
   const handleAssignTeamMember = (orderId: string, role: string, name: string) => {
+    dbUpdateOrder(orderId, { [role]: name });
     setOrders(orders.map(o => {
       if (o.id === orderId) {
         return {
@@ -207,40 +228,24 @@ export default function App() {
 
   // Prospect CRM Handlers
   const handleUpdateProspect = (updated: Prospect) => {
+    dbUpdateProspect(updated.id, updated);
     setProspects(prev => prev.map(p => p.id === updated.id ? updated : p));
   };
 
   const handleAddProspect = (newProspect: Prospect) => {
+    dbAddProspect(newProspect);
     setProspects(prev => [newProspect, ...prev]);
   };
 
-  const handleConvertToOrder = (prospect: Prospect) => {
-    const newOrderId = `ORD-${uuidv4().substring(0, 8).toUpperCase()}`;
-    const newOrder: Order = {
-      id: newOrderId,
+  const handleConvertToOrder = async (prospect: Prospect) => {
+    const newOrder = await dbConvertProspectToOrder(prospect.id, {
       title: prospect.jewelryType,
-      clientId: clients.find(c => c.name.toLowerCase() === prospect.name.toLowerCase())?.id || clients[0]?.id || 'CLI-001',
-      closer: prospect.agent,
-      designer: prospect.designer,
-      production: 'Marcus Forge',
-      status: 'CAD Design',
-      priority: 'High',
-      dueDate: prospect.targetDueDate,
-      notes: `${prospect.cadNotes || ''} | Budget: $${prospect.budget}`,
-      createdAt: new Date().toISOString(),
-      value: prospect.budget,
-      cadRevisions: prospect.cadRevisions || 1,
-      prospectId: prospect.id,
-      images: prospect.images && prospect.images.length > 0 ? prospect.images : [
-        'https://images.unsplash.com/photo-1605100804763-247f67b3557e?auto=format&fit=crop&w=800&q=80'
-      ],
-      history: [{ status: 'CAD Design', date: new Date().toISOString() }]
-    };
-
+      orderType: 'Ring'
+    });
     setOrders(prev => [newOrder, ...prev]);
     setProspects(prev => prev.map(p => p.id === prospect.id ? { 
       ...p, 
-      orderId: newOrderId,
+      orderId: newOrder.id,
       stage: 'Approved / Active Order'
     } : p));
 
@@ -249,6 +254,7 @@ export default function App() {
   };
 
   const handleUpdateOrderFields = (orderId: string, updatedFields: Partial<Order>) => {
+    dbUpdateOrder(orderId, updatedFields);
     setOrders(prev => prev.map(o => {
       if (o.id === orderId) {
         return { ...o, ...updatedFields };
@@ -285,6 +291,119 @@ export default function App() {
     return result;
   }, [orders, sortConfig, filterStatus, filterType, backlogIds]);
 
+  // Desktop Power-User Keyboard Shortcut Matrix
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable;
+
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandPaletteOpen(prev => !prev);
+        return;
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        setActiveEntity({ type: 'order', isNew: true });
+        return;
+      }
+
+      if (e.key === 'Escape') {
+        setIsCommandPaletteOpen(false);
+        setActiveEntity(null);
+        setIsModalOpen(false);
+        return;
+      }
+
+      if (isInput) return;
+
+      // J / K for order list keyboard traversal
+      if (e.key === 'j' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        if (filteredAndSortedOrders.length === 0) return;
+        setFocusedOrderIndex(prev => {
+          const next = (prev + 1) % filteredAndSortedOrders.length;
+          const target = filteredAndSortedOrders[next];
+          if (target) setActiveEntity({ type: 'order', id: target.id });
+          return next;
+        });
+      } else if (e.key === 'k' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (filteredAndSortedOrders.length === 0) return;
+        setFocusedOrderIndex(prev => {
+          const next = (prev - 1 + filteredAndSortedOrders.length) % filteredAndSortedOrders.length;
+          const target = filteredAndSortedOrders[next];
+          if (target) setActiveEntity({ type: 'order', id: target.id });
+          return next;
+        });
+      } else if (e.key === ' ' || e.code === 'Space') {
+        e.preventDefault();
+        if (activeEntity) {
+          setActiveEntity(null);
+        } else if (filteredAndSortedOrders.length > 0) {
+          const target = filteredAndSortedOrders[focusedOrderIndex] || filteredAndSortedOrders[0];
+          setActiveEntity({ type: 'order', id: target.id });
+        }
+      } else if (['1', '2', '3', '4', '5'].includes(e.key)) {
+        const activeOrderId = activeEntity?.type === 'order' && activeEntity.id 
+          ? activeEntity.id 
+          : filteredAndSortedOrders[focusedOrderIndex]?.id;
+        if (activeOrderId) {
+          e.preventDefault();
+          const statusMap: Record<string, OrderStatus> = {
+            '1': 'Inbox',
+            '2': 'In progress',
+            '3': 'In Review',
+            '4': 'Delivered',
+            '5': 'Backlog'
+          };
+          handleStatusChange(activeOrderId, statusMap[e.key]);
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [filteredAndSortedOrders, focusedOrderIndex, activeEntity]);
+
+  // Native Windows clipboard paste for active order images
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') return;
+
+      const activeOrderId = activeEntity?.type === 'order' ? activeEntity.id : null;
+      if (!activeOrderId) return;
+
+      const items = e.clipboardData?.items;
+      if (items) {
+        for (let i = 0; i < items.length; i++) {
+          if (items[i].type.indexOf('image') !== -1) {
+            const file = items[i].getAsFile();
+            if (file) {
+              const reader = new FileReader();
+              reader.onload = (uploadEvent) => {
+                const base64 = uploadEvent.target?.result as string;
+                if (base64) {
+                  const targetOrder = orders.find(o => o.id === activeOrderId);
+                  if (targetOrder) {
+                    handleUpdateOrderFields(activeOrderId, {
+                      images: [...(targetOrder.images || []), base64]
+                    });
+                  }
+                }
+              };
+              reader.readAsDataURL(file);
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => window.removeEventListener('paste', handlePaste);
+  }, [activeEntity, orders]);
+
   const renderOrdersView = () => {
     switch (currentView) {
       case 'cards':
@@ -309,6 +428,7 @@ export default function App() {
             onSort={handleSort}
             onStatusChange={handleStatusChange}
             colorRule={auraRule}
+            onBatchStatusChange={handleBatchStatusChange}
           />
         );
       case 'kanban':
@@ -879,6 +999,16 @@ export default function App() {
         onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
         onSelectClient={(client) => setActiveEntity({ type: 'client', id: client.id })}
       />
+
+      {/* Desktop Keyboard Shortcuts HUD */}
+      <div className="fixed bottom-3.5 left-20 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-xl border border-white/10 text-[10px] text-zinc-400 select-none shadow-xl z-20">
+        <span className="font-semibold text-zinc-300">Desktop Shortcuts:</span>
+        <span className="bg-white/10 px-1.5 py-0.5 rounded text-zinc-200 font-mono">J / K</span> Navigate
+        <span className="bg-white/10 px-1.5 py-0.5 rounded text-zinc-200 font-mono">1-5</span> Status
+        <span className="bg-white/10 px-1.5 py-0.5 rounded text-zinc-200 font-mono">Space</span> Peek
+        <span className="bg-white/10 px-1.5 py-0.5 rounded text-zinc-200 font-mono">Ctrl+V</span> Paste Img
+        <span className="bg-white/10 px-1.5 py-0.5 rounded text-zinc-200 font-mono">Ctrl+K</span> Actions
+      </div>
     </div>
   );
 }

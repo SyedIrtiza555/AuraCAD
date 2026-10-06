@@ -35,6 +35,7 @@ export function FloatingViewSwitcher({ currentView, onViewChange }: FloatingView
                 value={view.id}
                 title={view.label}
                 aria-label={view.label}
+                onClick={() => onViewChange(view.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all cursor-pointer ${
                   isActive
                     ? 'bg-slate-900 text-white shadow-xs'

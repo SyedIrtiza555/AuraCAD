@@ -1,6 +1,36 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  SortingState,
+  useReactTable,
+  RowSelectionState,
+  VisibilityState
+} from '@tanstack/react-table';
 import { Order, OrderStatus, STATUSES, detectOrderType } from '../../types';
-import { MoreHorizontal, ArrowUp, ArrowDown, Diamond, Medal, Watch, Sparkles, Clock, User } from 'lucide-react';
+import {
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+  Diamond,
+  Medal,
+  Watch,
+  Sparkles,
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  CheckSquare,
+  Square,
+  Clock,
+  User,
+  MoreHorizontal
+} from 'lucide-react';
 import { OrderPictureCarousel } from '../OrderPictureCarousel';
 import { OrderStatusBadge } from '../OrderStatusBadge';
 import { AuraColorRule, getOrderAura } from '../../theme/auraTheme';
@@ -9,32 +39,26 @@ interface OrderTableProps {
   getClientName: (id: string) => string;
   orders: Order[];
   onOrderClick: (order: Order) => void;
-  sortConfig: { key: keyof Order; direction: 'asc' | 'desc' } | null;
-  onSort: (key: keyof Order) => void;
+  sortConfig?: { key: keyof Order; direction: 'asc' | 'desc' } | null;
+  onSort?: (key: keyof Order) => void;
   onStatusChange?: (orderId: string, newStatus: OrderStatus) => void;
   colorRule?: AuraColorRule;
+  onBatchStatusChange?: (orderIds: string[], newStatus: OrderStatus) => void;
 }
 
-export function OrderTable({ orders, onOrderClick, sortConfig, onSort, getClientName, onStatusChange, colorRule = 'status' }: OrderTableProps) {
-  const getStatusDotColor = (status: OrderStatus) => {
-    switch(status) {
-      case 'Inbox':
-      case 'Inception':
-        return 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.8)]';
-      case 'In progress':
-      case 'CAD Design':
-      case 'Production':
-        return 'bg-[#ff943c] shadow-[0_0_6px_rgba(255,148,60,0.8)]';
-      case 'In Review':
-      case 'Review':
-        return 'bg-blue-400 shadow-[0_0_6px_rgba(96,165,250,0.8)]';
-      case 'Delivered':
-        return 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]';
-      case 'Backlog':
-      default:
-        return 'bg-zinc-400';
-    }
-  };
+export function OrderTable({
+  orders,
+  onOrderClick,
+  getClientName,
+  onStatusChange,
+  colorRule = 'status',
+  onBatchStatusChange
+}: OrderTableProps) {
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [globalFilter, setGlobalFilter] = useState('');
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [isDense, setIsDense] = useState(false);
 
   const getOrderTypeBadge = (order: Order) => {
     const type = detectOrderType(order);
@@ -50,175 +74,451 @@ export function OrderTable({ orders, onOrderClick, sortConfig, onSort, getClient
     }
   };
 
-  const getCategoryIcon = (title: string) => {
-    const t = title.toLowerCase();
-    if (t.includes('bracelet') || t.includes('bangle')) return <Watch size={12} className="text-blue-400" />;
-    if (t.includes('pendant') || t.includes('necklace') || t.includes('choker')) return <Medal size={12} className="text-amber-400" />;
-    if (t.includes('earring') || t.includes('hoop') || t.includes('drop')) return <Sparkles size={12} className="text-purple-400" />;
-    return <Diamond size={12} className="text-[#ff943c]" />;
+  const columns = useMemo<ColumnDef<Order>[]>(
+    () => [
+      {
+        id: 'select',
+        header: ({ table }) => (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              table.toggleAllPageRowsSelected(!table.getIsAllPageRowsSelected());
+            }}
+            className="p-1 hover:text-white text-zinc-400 transition-colors"
+          >
+            {table.getIsAllPageRowsSelected() ? (
+              <CheckSquare size={14} className="text-[#ff943c]" />
+            ) : table.getIsSomePageRowsSelected() ? (
+              <Square size={14} className="text-amber-400" />
+            ) : (
+              <Square size={14} />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              row.toggleSelected();
+            }}
+            className="p-1 hover:text-white text-zinc-400 transition-colors"
+          >
+            {row.getIsSelected() ? (
+              <CheckSquare size={14} className="text-[#ff943c]" />
+            ) : (
+              <Square size={14} />
+            )}
+          </button>
+        ),
+        enableSorting: false,
+        size: 32
+      },
+      {
+        id: 'visual',
+        header: 'CAD Visual',
+        cell: ({ row }) => (
+          <div className="w-16 h-12 rounded-lg overflow-hidden border border-white/10 bg-black/40 shadow-sm relative group/img">
+            <OrderPictureCarousel
+              images={row.original.images || []}
+              title={row.original.title}
+              aspectRatio="square"
+              className="w-full h-full"
+            />
+          </div>
+        ),
+        enableSorting: false,
+        size: 70
+      },
+      {
+        accessorKey: 'id',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-semibold text-zinc-400 hover:text-white"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            ID
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp size={11} className="text-[#ff943c]" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown size={11} className="text-[#ff943c]" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-40" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="font-mono text-[11px] font-bold text-slate-700 dark:text-zinc-300">
+            {row.original.id}
+          </div>
+        )
+      },
+      {
+        accessorKey: 'title',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Design Brief
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp size={11} className="text-[#ff943c]" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown size={11} className="text-[#ff943c]" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-40" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const badge = getOrderTypeBadge(row.original);
+          return (
+            <div className="flex flex-col gap-1 max-w-[280px]">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-bold border ${badge.badge}`}>
+                  {badge.icon}
+                  {badge.label}
+                </span>
+                <span className="font-semibold text-xs text-slate-900 dark:text-zinc-100 truncate group-hover:text-[#ff943c] transition-colors">
+                  {row.original.title}
+                </span>
+              </div>
+              {row.original.cadStage && (
+                <span className="text-[10px] text-slate-500 dark:text-zinc-400 font-mono">
+                  Stage: {row.original.cadStage}
+                </span>
+              )}
+            </div>
+          );
+        }
+      },
+      {
+        accessorKey: 'clientId',
+        header: 'Client',
+        cell: ({ row }) => (
+          <div className="text-xs text-slate-800 dark:text-zinc-300 font-medium flex items-center gap-1.5">
+            <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-zinc-800 border border-slate-300 dark:border-white/10 flex items-center justify-center text-[10px] font-bold text-slate-800 dark:text-zinc-300">
+              {getClientName(row.original.clientId).charAt(0)}
+            </span>
+            <span className="truncate max-w-[120px]">{getClientName(row.original.clientId)}</span>
+          </div>
+        )
+      },
+      {
+        id: 'assignees',
+        header: 'Assignees',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1">
+            <span 
+              title={`CAD Designer: ${row.original.designer}`}
+              className="w-6 h-6 rounded-md bg-cyan-100 dark:bg-cyan-950/60 border border-cyan-300 dark:border-cyan-500/30 flex items-center justify-center text-[10px] font-bold text-cyan-800 dark:text-cyan-300"
+            >
+              {row.original.designer?.charAt(0) || 'D'}
+            </span>
+            <span 
+              title={`Closer: ${row.original.closer}`}
+              className="w-6 h-6 rounded-md bg-amber-100 dark:bg-amber-950/60 border border-amber-300 dark:border-amber-500/30 flex items-center justify-center text-[10px] font-bold text-amber-800 dark:text-amber-300"
+            >
+              {row.original.closer?.charAt(0) || 'C'}
+            </span>
+            <span 
+              title={`Forge: ${row.original.production}`}
+              className="w-6 h-6 rounded-md bg-purple-100 dark:bg-purple-950/60 border border-purple-300 dark:border-purple-500/30 flex items-center justify-center text-[10px] font-bold text-purple-800 dark:text-purple-300"
+            >
+              {row.original.production?.charAt(0) || 'F'}
+            </span>
+          </div>
+        )
+      },
+      {
+        accessorKey: 'status',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Status
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp size={11} className="text-[#ff943c]" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown size={11} className="text-[#ff943c]" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-40" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div onClick={(e) => e.stopPropagation()}>
+            <OrderStatusBadge
+              order={row.original}
+              variant="pill"
+              size="sm"
+            />
+          </div>
+        )
+      },
+      {
+        accessorKey: 'value',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Value
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp size={11} className="text-[#ff943c]" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown size={11} className="text-[#ff943c]" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-40" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => (
+          <div className="font-mono text-xs font-bold text-slate-900 dark:text-zinc-200">
+            ${(row.original.value || 0).toLocaleString()}
+          </div>
+        )
+      },
+      {
+        accessorKey: 'dueDate',
+        header: ({ column }) => (
+          <button
+            className="flex items-center gap-1 uppercase tracking-wider text-[10px] font-semibold text-slate-600 dark:text-zinc-400 hover:text-slate-900 dark:hover:text-white"
+            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+          >
+            Due Date
+            {column.getIsSorted() === 'asc' ? (
+              <ArrowUp size={11} className="text-[#ff943c]" />
+            ) : column.getIsSorted() === 'desc' ? (
+              <ArrowDown size={11} className="text-[#ff943c]" />
+            ) : (
+              <ArrowUpDown size={11} className="opacity-40" />
+            )}
+          </button>
+        ),
+        cell: ({ row }) => {
+          const isOverdue = new Date(row.original.dueDate) < new Date() && row.original.status !== 'Delivered';
+          return (
+            <div className={`flex items-center gap-1 font-mono text-[11px] ${isOverdue ? 'text-rose-500 font-bold' : 'text-slate-600 dark:text-zinc-400'}`}>
+              <Clock size={11} />
+              {row.original.dueDate}
+            </div>
+          );
+        }
+      }
+    ],
+    [getClientName, onStatusChange, colorRule]
+  );
+
+  const table = useReactTable({
+    data: orders,
+    columns,
+    state: {
+      sorting,
+      globalFilter,
+      rowSelection,
+      columnVisibility
+    },
+    onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    onRowSelectionChange: setRowSelection,
+    onColumnVisibilityChange: setColumnVisibility,
+    getCoreRowModel: getCoreRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10
+      }
+    }
+  });
+
+  const selectedRows = table.getSelectedRowModel().rows;
+
+  const handleExportJSON = () => {
+    const dataToExport = selectedRows.length > 0 ? selectedRows.map(r => r.original) : orders;
+    const blob = new Blob([JSON.stringify(dataToExport, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `auracad_orders_${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const SortIcon = ({ columnKey }: { columnKey: keyof Order }) => {
-    if (sortConfig?.key !== columnKey) return null;
-    return sortConfig.direction === 'asc' ? <ArrowUp size={11} className="inline ml-1 text-[#ff943c]" /> : <ArrowDown size={11} className="inline ml-1 text-[#ff943c]" />;
+  const handleBatchStatus = (status: OrderStatus) => {
+    const ids = selectedRows.map(r => r.original.id);
+    if (ids.length === 0) return;
+    if (onBatchStatusChange) {
+      onBatchStatusChange(ids, status);
+    } else {
+      ids.forEach(id => onStatusChange?.(id, status));
+    }
+    table.resetRowSelection();
   };
-
-  const thClass = "py-2.5 px-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors select-none";
 
   return (
-    <div className="w-full overflow-x-auto pb-4 rounded-2xl border border-white/10 bg-zinc-900/40 backdrop-blur-2xl shadow-[0_8px_32px_0_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.12)]">
-      <table className="w-full text-left border-collapse min-w-[950px]">
-        <thead>
-          <tr className="border-b border-white/10 bg-white/[0.02]">
-            <th className="py-2.5 px-3 w-24 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">CAD Visual</th>
-            <th className={thClass} onClick={() => onSort('id')}>ID <SortIcon columnKey="id" /></th>
-            <th className={thClass} onClick={() => onSort('title')}>Design Brief <SortIcon columnKey="title" /></th>
-            <th className={thClass} onClick={() => onSort('clientId')}>Client <SortIcon columnKey="clientId" /></th>
-            <th className="py-2.5 px-3 text-[10px] font-semibold text-zinc-400 uppercase tracking-wider">Assignees</th>
-            <th className={thClass} onClick={() => onSort('status')}>Stage <SortIcon columnKey="status" /></th>
-            <th className={thClass} onClick={() => onSort('value')}>Value <SortIcon columnKey="value" /></th>
-            <th className={thClass} onClick={() => onSort('dueDate')}>Due <SortIcon columnKey="dueDate" /></th>
-            <th className="py-2.5 px-3 text-right w-10"></th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-white/5">
-          {orders.map(order => {
-            const isOverdue = new Date(order.dueDate) < new Date() && order.status !== 'Delivered';
-            const currentStageIdx = STATUSES.indexOf(order.status);
+    <div className="w-full flex flex-col gap-3">
+      {/* TanStack Table Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-white/95 dark:bg-zinc-900/60 backdrop-blur-xl border border-slate-200 dark:border-white/10 shadow-sm">
+        {/* Search */}
+        <div className="relative flex-1 min-w-[200px] max-w-sm">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-zinc-400" />
+          <input
+            type="text"
+            value={globalFilter ?? ''}
+            onChange={(e) => setGlobalFilter(e.target.value)}
+            placeholder="Search orders, clients, designs..."
+            className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 dark:bg-black/40 border border-slate-200 dark:border-white/10 text-xs text-slate-900 dark:text-zinc-200 placeholder:text-slate-400 focus:outline-none focus:border-[#ff943c]"
+          />
+        </div>
 
-            return (
-              <tr 
-                key={order.id} 
-                onClick={() => onOrderClick(order)} 
-                draggable
-                onDragStart={(e) => {
-                  e.dataTransfer.setData('application/json', JSON.stringify({ type: 'order', id: order.id }));
-                  e.dataTransfer.effectAllowed = 'move';
-                }}
-                className="hover:bg-white/[0.04] transition-colors cursor-pointer group active:cursor-grabbing"
+        {/* Batch Actions & Controls */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {selectedRows.length > 0 && (
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-500/10 border border-orange-500/30 text-orange-600 dark:text-orange-400 text-xs font-semibold">
+              <span>{selectedRows.length} selected</span>
+              <div className="h-3 w-px bg-orange-500/30 mx-1" />
+              <button
+                onClick={() => handleBatchStatus('In progress')}
+                className="hover:underline text-[11px]"
               >
-                {/* Visual Thumbnail */}
-                <td className="py-2 px-3 align-middle" onClick={e => e.stopPropagation()}>
-                  <div className="w-20">
-                    <OrderPictureCarousel 
-                      images={order.images}
-                      title={order.title}
-                      compact={true}
-                      allowZoom={true}
-                    />
-                  </div>
-                </td>
+                Start
+              </button>
+              <button
+                onClick={() => handleBatchStatus('In Review')}
+                className="hover:underline text-[11px]"
+              >
+                Review
+              </button>
+              <button
+                onClick={() => handleBatchStatus('Delivered')}
+                className="hover:underline text-[11px]"
+              >
+                Deliver
+              </button>
+            </div>
+          )}
 
-                {/* ID with revision indicator and OrderType badge */}
-                <td className="py-2 px-3 align-middle font-mono text-xs text-zinc-400">
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <span className="font-semibold text-zinc-300">{order.id}</span>
-                    <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded-full border ${getOrderTypeBadge(order).badge}`}>
-                      {getOrderTypeBadge(order).label}
-                    </span>
-                    {order.cadRevisions !== undefined && (
-                      <span className="text-[9px] px-1 py-0.2 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20">
-                        R{order.cadRevisions}
-                      </span>
-                    )}
-                  </div>
-                </td>
+          <button
+            onClick={() => setIsDense(!isDense)}
+            className={`px-2.5 py-1.5 rounded-xl border text-xs font-medium transition-colors ${
+              isDense 
+                ? 'bg-slate-900 dark:bg-white/10 text-white border-slate-900 dark:border-white/20' 
+                : 'bg-white dark:bg-black/30 border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-400 hover:bg-slate-50 dark:hover:text-zinc-200'
+            }`}
+          >
+            {isDense ? 'Compact' : 'Comfortable'}
+          </button>
 
-                {/* Title with Category Icon */}
-                <td className="py-2 px-3 align-middle max-w-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="shrink-0 p-1 rounded bg-white/5 border border-white/10">
-                      {getCategoryIcon(order.title)}
-                    </span>
-                    <span className="text-xs font-semibold text-white group-hover:text-[#ff943c] transition-colors line-clamp-1">
-                      {order.title}
-                    </span>
-                  </div>
-                </td>
+          <button
+            onClick={handleExportJSON}
+            title="Export orders as JSON"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-white dark:bg-black/30 hover:bg-slate-50 dark:hover:bg-white/10 border border-slate-200 dark:border-white/10 text-slate-700 dark:text-zinc-300 text-xs transition-colors"
+          >
+            <Download size={13} />
+            <span>Export</span>
+          </button>
+        </div>
+      </div>
 
-                {/* Client */}
-                <td className="py-2 px-3 align-middle text-xs font-medium text-zinc-300">
-                  <div className="flex items-center gap-1.5">
-                    <User size={12} className="text-zinc-500 shrink-0" />
-                    <span className="truncate max-w-[120px]">{getClientName(order.clientId)}</span>
-                  </div>
-                </td>
-
-                {/* Assignees Visual Avatars Stack */}
-                <td className="py-2 px-3 align-middle">
-                  <div className="flex items-center -space-x-1.5">
-                    {order.closer && (
-                      <div 
-                        className="w-5 h-5 rounded-full bg-blue-500/20 border border-blue-400/40 text-blue-300 flex items-center justify-center text-[9px] font-bold shadow-sm"
-                        title={`Sales Closer: ${order.closer}`}
-                      >
-                        {order.closer.charAt(0)}
-                      </div>
-                    )}
-                    {order.designer && (
-                      <div 
-                        className="w-5 h-5 rounded-full bg-[#ff943c]/20 border border-[#ff943c]/50 text-[#ff943c] flex items-center justify-center text-[9px] font-bold shadow-sm"
-                        title={`CAD Designer: ${order.designer}`}
-                      >
-                        {order.designer.charAt(0)}
-                      </div>
-                    )}
-                  </div>
-                </td>
-
-                {/* Stage with Visual Progress Track */}
-                <td className="py-2 px-3 align-middle">
-                  <div className="flex flex-col gap-1 min-w-[110px]">
-                    <OrderStatusBadge order={order} variant="pill" size="xs" showCountdownHint={true} />
-                    {/* Micro 5-step track */}
-                    <div className="flex items-center gap-0.5 w-16 mt-0.5">
-                      {STATUSES.map((_, i) => (
-                        <div 
-                          key={i} 
-                          className={`h-0.5 flex-1 rounded-full ${
-                            i === currentStageIdx ? 'bg-[#ff943c]' : i < currentStageIdx ? 'bg-white/40' : 'bg-white/10'
-                          }`}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </td>
-
-                {/* Value */}
-                <td className="py-2 px-3 align-middle text-xs font-mono font-bold text-white tabular-nums">
-                  {order.value ? `$${order.value.toLocaleString()}` : '—'}
-                </td>
-
-                {/* Due Date with Visual Urgency */}
-                <td className="py-2 px-3 align-middle">
-                  <div className="flex items-center gap-1.5">
-                    {isOverdue ? (
-                      <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping shrink-0" />
-                    ) : (
-                      <Clock size={11} className="text-zinc-500 shrink-0" />
-                    )}
-                    <span className={`text-xs font-mono ${isOverdue ? 'text-red-400 font-semibold' : 'text-zinc-400'}`}>
-                      {new Date(order.dueDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
-                    </span>
-                  </div>
-                </td>
-
-                {/* Actions */}
-                <td className="py-2 px-3 align-middle text-right">
-                  <button className="text-zinc-500 hover:text-white transition-colors p-1 rounded hover:bg-white/10">
-                    <MoreHorizontal size={14} />
-                  </button>
+      {/* TanStack Data Grid */}
+      <div className="w-full overflow-x-auto pb-1 rounded-2xl border border-slate-200 dark:border-white/10 bg-white/95 dark:bg-zinc-900/40 backdrop-blur-2xl shadow-sm">
+        <table className="w-full text-left border-collapse min-w-[950px]">
+          <thead>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <tr key={headerGroup.id} className="border-b border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-white/[0.02]">
+                {headerGroup.headers.map((header) => (
+                  <th
+                    key={header.id}
+                    className="py-2.5 px-3 text-[10px] font-semibold text-slate-600 dark:text-zinc-400 uppercase tracking-wider select-none"
+                    style={{ width: header.getSize() !== 150 ? header.getSize() : undefined }}
+                  >
+                    {header.isPlaceholder
+                      ? null
+                      : flexRender(header.column.columnDef.header, header.getContext())}
+                  </th>
+                ))}
+              </tr>
+            ))}
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+            {table.getRowModel().rows.length === 0 ? (
+              <tr>
+                <td colSpan={columns.length} className="text-center py-10 text-slate-500 text-sm">
+                  No orders matched your search or filters.
                 </td>
               </tr>
-            );
-          })}
-        </tbody>
-      </table>
-      {orders.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-16 text-zinc-500">
-          <span className="text-xs font-semibold">No orders found</span>
+            ) : (
+              table.getRowModel().rows.map((row) => (
+                <tr
+                  key={row.id}
+                  onClick={() => onOrderClick(row.original)}
+                  draggable
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify({ type: 'order', id: row.original.id }));
+                    e.dataTransfer.effectAllowed = 'move';
+                  }}
+                  className={`hover:bg-slate-50/80 dark:hover:bg-white/[0.04] transition-colors cursor-pointer group active:cursor-grabbing ${
+                    row.getIsSelected() ? 'bg-orange-500/[0.06]' : ''
+                  }`}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <td
+                      key={cell.id}
+                      className={`px-3 ${isDense ? 'py-2' : 'py-3.5'} align-middle`}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* TanStack Table Pagination */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2 px-4 rounded-xl bg-white/95 dark:bg-zinc-900/40 border border-slate-200 dark:border-white/10 text-xs text-slate-600 dark:text-zinc-400 shadow-sm">
+        <div className="flex items-center gap-2">
+          <span>
+            Page <strong className="text-slate-900 dark:text-zinc-200">{table.getState().pagination.pageIndex + 1}</strong> of{' '}
+            <strong className="text-slate-900 dark:text-zinc-200">{table.getPageCount() || 1}</strong>
+          </span>
+          <span className="text-slate-300 dark:text-zinc-600">|</span>
+          <span>{table.getFilteredRowModel().rows.length} total orders</span>
         </div>
-      )}
+
+        <div className="flex items-center gap-2">
+          <select
+            value={table.getState().pagination.pageSize}
+            onChange={(e) => table.setPageSize(Number(e.target.value))}
+            className="bg-slate-50 dark:bg-black/50 border border-slate-200 dark:border-white/10 rounded-lg px-2 py-1 text-xs text-slate-800 dark:text-zinc-300 focus:outline-none"
+          >
+            {[5, 10, 20, 50].map((size) => (
+              <option key={size} value={size}>
+                Show {size}
+              </option>
+            ))}
+          </select>
+
+          <button
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+            className="p-1 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <ChevronLeft size={16} />
+          </button>
+          <button
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+            className="p-1 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 disabled:opacity-30 disabled:hover:bg-transparent"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
