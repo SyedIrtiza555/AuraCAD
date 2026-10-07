@@ -1,17 +1,12 @@
 # AuraCAD — Launch & Service Operations
 
-## Active Endpoints
+## Active Endpoints Matrix
 
-| Service | Target URL | Protocol & Ports | Status |
-| :--- | :--- | :--- | :--- |
-| **Vite App (Local)** | [http://localhost:3000](http://localhost:3000) | `HTTP/HMR :3000` | **ONLINE** |
-| **Vite App (Tailscale Mesh)** | [http://100.100.56.31:3000](http://100.100.56.31:3000) | `Encrypted Mesh :3000` | **ONLINE** |
-| **PocketBase Dashboard (Vite Proxy - Recommended)** | [http://localhost:3000/_/](http://localhost:3000/_/) | `Bypasses Windows Firewall :3000` | **ONLINE** |
-| **PocketBase Dashboard (Tailscale Proxy)** | [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/) | `Firewall-Free Mesh :3000` | **ONLINE** |
-| **PocketBase Dashboard (Direct Port)** | [http://localhost:8090/_/](http://localhost:8090/_/) | `Direct Native :8090` | **ONLINE** |
-| **PocketBase Root Redirect** | [http://localhost:8090](http://localhost:8090) | `Auto-Redirects to /_/` | **ONLINE** |
-| **Antigravity Watcher Telemetry** | [http://localhost:4141](http://localhost:4141) | `HTTP Telemetry :4141` | **ONLINE** |
-| **Watcher Telemetry (Tailnet)** | [http://100.100.56.31:4141](http://100.100.56.31:4141) | `Mesh Telemetry :4141` | **ONLINE** |
+| Layer (Vertical) | 1. Local (Horizontal) | 2. Tailscale (Horizontal) |
+| :--- | :--- | :--- |
+| **1. Frontend** | • [http://localhost:3000](http://localhost:3000) *(Vite Dev Server + HMR)* | • [http://100.100.56.31:3000](http://100.100.56.31:3000) *(Encrypted Mesh)* |
+| **2. Backend** | • **Dashboard (Proxy)**: [http://localhost:3000/_/](http://localhost:3000/_/) *(Recommended)*<br>• **Direct Port**: [http://localhost:8090/_/](http://localhost:8090/_/)<br>• **Root Redirect**: [http://localhost:8090](http://localhost:8090) | • **Dashboard (Proxy)**: [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/) *(Firewall-Free)*<br>• **REST API**: `http://100.100.56.31:8090/api/` |
+| **3. Other** | • **Watcher Telemetry**: [http://localhost:4141](http://localhost:4141) | • **Watcher Telemetry**: [http://100.100.56.31:4141](http://100.100.56.31:4141) |
 
 ---
 

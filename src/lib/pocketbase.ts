@@ -60,12 +60,13 @@ export async function authenticate(identity: string, password: string): Promise<
     const authData = await pb.collection('users').authWithPassword(emailOrUser, password);
     const rec = authData.record;
 
+    const derivedUsername = rec.username || (rec.email ? rec.email.split('@')[0] : 'user');
     const user: PBUser = {
       id: rec.id,
-      username: rec.username,
+      username: derivedUsername,
       email: rec.email,
-      name: rec.name || rec.username,
-      role: (rec.role as UserRole) || (rec.username === 'dev' ? 'superagent' : 'admin'),
+      name: rec.name || derivedUsername,
+      role: (rec.role as UserRole) || (derivedUsername === 'dev' ? 'superagent' : 'admin'),
       avatar: rec.avatar,
       created: rec.created,
     };
@@ -128,15 +129,18 @@ export async function fetchAllUsers(): Promise<PBUser[]> {
     const records = await pb.collection('users').getFullList({
       sort: 'created',
     });
-    return records.map((r: any) => ({
-      id: r.id,
-      username: r.username,
-      email: r.email,
-      name: r.name || r.username,
-      role: (r.role as UserRole) || 'designer',
-      avatar: r.avatar,
-      created: r.created,
-    }));
+    return records.map((r: any) => {
+      const uName = r.username || (r.email ? r.email.split('@')[0] : 'user');
+      return {
+        id: r.id,
+        username: uName,
+        email: r.email,
+        name: r.name || uName,
+        role: (r.role as UserRole) || (uName === 'dev' ? 'superagent' : 'designer'),
+        avatar: r.avatar,
+        created: r.created,
+      };
+    });
   } catch (err) {
     console.warn('[PocketBase] Failed to fetch users list:', err);
     // Return default seeded users if offline
