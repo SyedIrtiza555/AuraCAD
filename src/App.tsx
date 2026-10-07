@@ -48,8 +48,16 @@ import {
   Medal,
   Watch,
   Sparkles,
-  Tag
+  Tag,
+  Crown,
+  UserCheck,
+  Compass,
+  PhoneCall
 } from 'lucide-react';
+import { RoleManagementModal } from './components/RoleManagementModal';
+import { DesignerBenchView } from './components/views/DesignerBenchView';
+import { AgentCrmView } from './components/views/AgentCrmView';
+import { getCurrentUser, PBUser, UserRole } from './lib/pocketbase';
 
 export default function App() {
   // Dexie.js Reactive Offline Persistence Layer
@@ -89,7 +97,10 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
-  const [currentModule, setCurrentModule] = useState<'orders' | 'crm' | 'complaints'>('orders');
+  const [currentModule, setCurrentModule] = useState<'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm'>('orders');
+  const [currentUser, setCurrentUser] = useState<PBUser>(() => getCurrentUser());
+  const [activeRoleView, setActiveRoleView] = useState<'all' | 'admin' | 'designer' | 'agent'>('all');
+  const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'cards' | 'table' | 'kanban' | 'calendar' | 'team'>('cards');
   const [viewPreset, setViewPreset] = useState<ViewPreset>(() => {
     const saved = localStorage.getItem('aydieo_view_preset');
@@ -492,6 +503,9 @@ export default function App() {
         ordersCount={filteredAndSortedOrders.length}
         clientsCount={clients.length}
         complaintsCount={totalComplaintsCount}
+        currentUser={currentUser}
+        activeRoleView={activeRoleView}
+        onOpenRoleManager={() => setIsRoleManagerOpen(true)}
       />
       
       <main className="flex-1 flex flex-col min-w-0 bg-transparent overflow-hidden relative">
@@ -501,12 +515,64 @@ export default function App() {
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 via-[#ff943c]/10 to-purple-500/10 border border-amber-300/60 backdrop-blur-xl shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#ff943c] shadow-[0_0_8px_rgba(255,148,60,0.9)] animate-pulse" />
               <span className="text-xs font-bold tracking-tight text-slate-900 font-mono">AuraCAD</span>
-              <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v1</span>
+              <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-a</span>
             </div>
             <ChevronRight size={12} className="text-slate-400" />
             <h2 className="text-xs font-semibold text-slate-700 tracking-wide">
-              {currentModule === 'orders' ? 'Orders Studio' : currentModule === 'crm' ? 'Clients CRM' : 'Complaints & Client Changes Triage'}
+              {currentModule === 'designer_bench' || activeRoleView === 'designer' 
+                ? '3D CAD Designer Workbench' 
+                : currentModule === 'agent_crm' || activeRoleView === 'agent' 
+                ? 'Agent CRM & Powerdialler Hub' 
+                : currentModule === 'orders' 
+                ? 'Orders Studio' 
+                : currentModule === 'crm' 
+                ? 'Clients CRM' 
+                : 'Complaints & Client Changes Triage'}
             </h2>
+
+            {/* Superuser / God Mode HUD Pill */}
+            <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-400/40 text-xs shadow-xs ml-2">
+              <div className="flex items-center gap-1 font-bold text-amber-800 dark:text-amber-300 text-[11px]">
+                <Crown size={11} className="text-amber-500" />
+                <span>God: {currentUser.username}</span>
+              </div>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <div className="flex items-center gap-1 text-[10px] font-semibold">
+                <button
+                  onClick={() => { setActiveRoleView('all'); setCurrentModule('orders'); }}
+                  className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'all' ? 'bg-amber-500 text-black font-bold' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => { setActiveRoleView('admin'); setCurrentModule('orders'); }}
+                  className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'admin' ? 'bg-blue-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  Admin
+                </button>
+                <button
+                  onClick={() => { setActiveRoleView('designer'); setCurrentModule('designer_bench'); }}
+                  className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'designer' ? 'bg-purple-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  Designer
+                </button>
+                <button
+                  onClick={() => { setActiveRoleView('agent'); setCurrentModule('agent_crm'); }}
+                  className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'agent' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  Agent
+                </button>
+              </div>
+              <span className="text-slate-300 dark:text-slate-600">|</span>
+              <button
+                onClick={() => setIsRoleManagerOpen(true)}
+                className="flex items-center gap-0.5 text-[10px] font-bold text-amber-700 hover:text-amber-900 hover:underline cursor-pointer"
+                title="Manage Roles in PocketBase"
+              >
+                <UserCheck size={11} />
+                <span>Roles</span>
+              </button>
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -656,30 +722,45 @@ export default function App() {
 
         {/* Content Body with Clean White Ambience */}
         <div className="flex-1 overflow-auto relative p-4 md:p-6 pb-24">
-          {currentModule === 'orders' && renderOrdersView()}
-          {currentModule === 'crm' && (
-            <CRM 
+          {currentModule === 'designer_bench' || activeRoleView === 'designer' ? (
+            <DesignerBenchView 
+              orders={orders} 
+              onUpdateOrderStatus={(id, st) => handleUpdateOrderFields(id, { status: st })} 
+            />
+          ) : currentModule === 'agent_crm' || activeRoleView === 'agent' ? (
+            <AgentCrmView 
+              prospects={prospects} 
               clients={clients} 
-              orders={orders}
-              preset={viewPreset}
-              onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
-              onSelectClient={(client) => setActiveEntity({ type: 'client', id: client.id })}
-              onOpenNewClient={() => setActiveEntity({ type: 'client', isNew: true })}
-              onAddClient={handleSaveClient}
+              onOpenProspect={(p) => setActiveEntity({ type: 'client', id: p.id })}
             />
-          )}
-          {currentModule === 'complaints' && (
-            <ComplaintsView 
-              orders={orders}
-              getClientName={getClientName}
-              onUpdateOrder={handleUpdateOrderFields}
-              onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
-            />
+          ) : (
+            <>
+              {currentModule === 'orders' && renderOrdersView()}
+              {currentModule === 'crm' && (
+                <CRM 
+                  clients={clients} 
+                  orders={orders}
+                  preset={viewPreset}
+                  onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
+                  onSelectClient={(client) => setActiveEntity({ type: 'client', id: client.id })}
+                  onOpenNewClient={() => setActiveEntity({ type: 'client', isNew: true })}
+                  onAddClient={handleSaveClient}
+                />
+              )}
+              {currentModule === 'complaints' && (
+                <ComplaintsView 
+                  orders={orders}
+                  getClientName={getClientName}
+                  onUpdateOrder={handleUpdateOrderFields}
+                  onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
+                />
+              )}
+            </>
           )}
         </div>
 
-        {/* Floating View Switcher (Radix UI Tabs) - Only in Orders Module */}
-        {currentModule === 'orders' && (
+        {/* Floating View Switcher (Radix UI Tabs) - Only in Orders Module when not in designer/agent view */}
+        {currentModule === 'orders' && activeRoleView !== 'designer' && activeRoleView !== 'agent' && (
           <FloatingViewSwitcher 
             currentView={currentView}
             onViewChange={setCurrentView}
@@ -998,6 +1079,25 @@ export default function App() {
         onCreateOrder={() => setActiveEntity({ type: 'order', isNew: true })}
         onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
         onSelectClient={(client) => setActiveEntity({ type: 'client', id: client.id })}
+      />
+
+      {/* PocketBase Superuser Role Management Modal */}
+      <RoleManagementModal 
+        isOpen={isRoleManagerOpen}
+        onClose={() => setIsRoleManagerOpen(false)}
+        activeRoleView={activeRoleView}
+        onSelectRoleView={(rv) => {
+          setActiveRoleView(rv);
+          if (rv === 'designer') setCurrentModule('designer_bench');
+          else if (rv === 'agent') setCurrentModule('agent_crm');
+          else if (rv === 'admin') setCurrentModule('orders');
+          setIsRoleManagerOpen(false);
+        }}
+        onUserRoleChanged={(updatedUser) => {
+          if (updatedUser.id === currentUser.id) {
+            setCurrentUser(updatedUser);
+          }
+        }}
       />
 
       {/* Desktop Keyboard Shortcuts HUD */}

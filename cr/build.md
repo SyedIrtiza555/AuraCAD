@@ -17,6 +17,7 @@
 | `three` / `@types/three` | `^0.186.1` | Procedural 3D WebGL CAD jewelry inspector with PBR alloy metals & refractive gemstones |
 | `@tanstack/react-table` | `^8.21.3` | High-performance headless data table with multi-sort, batch actions, and density toggle |
 | `dexie` / `dexie-react-hooks` | `^4.4.6` | Offline-first IndexedDB persistence engine with zero data dead-ends |
+| `pocketbase` | `^0.25.2` | High-performance Go/SQLite backend with real-time subscriptions, auth, and role management |
 | `motion` (Framer Motion) | `^12.23.24` | Fluid liquid animations, accordion peeks, and modal transitions |
 | `lucide-react` | `^0.546.0` | Clean vector iconography aligned with luxury jewelry metaphors |
 | `@radix-ui/react-tabs` | `^1.1.21` | Accessible primitive for multi-module switching |

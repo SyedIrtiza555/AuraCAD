@@ -35,6 +35,16 @@
    - Fixed Tailwind v4 `@custom-variant dark (&:where(.theme-dark, .theme-dark *))` to prevent light-theme contrast glitches.
    - Full palette support across both light and dark aesthetics.
 
+8. **PocketBase Backend & God User Superuser Controls**:
+   - Initialized PocketBase v0.25.9 Go/SQLite backend on port `8090` (`http://localhost:8090` / Tailscale `http://100.100.56.31:8090`).
+   - Configured God User Superuser: username `dev` (`dev@auracad.local`) with password `Goto hell 555`.
+   - Setup RBAC role matrix: `admin`, `designer`, `agent`, `superagent`.
+   - Built interactive Superuser Role Management console with live role reassignment and user creation.
+   - Created dedicated UI perspectives:
+     - **Admin UI**: Full studio oversight, financial metrics, TanStack table, team workload.
+     - **Designer Workbench**: Centered on Three.js procedural 3D CAD inspector, PBR alloy metals (18K Yellow/White/Rose Gold, Platinum), gemstones (Diamond, Ruby, Sapphire, Emerald), and casting shrinkage/wall thickness safety verification.
+     - **Agent CRM & Powerdialler Hub**: Outbound lead queue with 1-click dial simulation, call timer, outcome tagging ("Qualified", "Bespoke Quote Sent", "Follow-up Needed"), and real-time sync with PocketBase `call_logs`.
+
 ---
 
 ## Universal Testing Protocol Verification
