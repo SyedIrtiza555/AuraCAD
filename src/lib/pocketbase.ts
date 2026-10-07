@@ -25,11 +25,10 @@ export interface PBCallLog {
   call_time: string;
 }
 
-// Auto-detect PocketBase URL: use localhost or current hostname (for Tailscale) on port 8090
+// Auto-detect PocketBase URL: uses same-origin Vite proxy for zero-firewall & zero-CORS resilience
 export const getPocketBaseUrl = (): string => {
   if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname || '127.0.0.1';
-    return `http://${hostname}:8090`;
+    return window.location.origin;
   }
   return 'http://127.0.0.1:8090';
 };

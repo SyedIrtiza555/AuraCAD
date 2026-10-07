@@ -6,9 +6,10 @@
 | :--- | :--- | :--- | :--- |
 | **Vite App (Local)** | [http://localhost:3000](http://localhost:3000) | `HTTP/HMR :3000` | **ONLINE** |
 | **Vite App (Tailscale Mesh)** | [http://100.100.56.31:3000](http://100.100.56.31:3000) | `Encrypted Mesh :3000` | **ONLINE** |
-| **PocketBase Backend (Local)** | [http://localhost:8090](http://localhost:8090) | `REST API / SQLite :8090` | **ONLINE** |
-| **PocketBase Admin Dashboard** | [http://localhost:8090/_/](http://localhost:8090/_/) | `Admin Web UI :8090` | **ONLINE** |
-| **PocketBase (Tailscale Mesh)** | [http://100.100.56.31:8090](http://100.100.56.31:8090) | `Mesh REST API :8090` | **ONLINE** |
+| **PocketBase Dashboard (Vite Proxy - Recommended)** | [http://localhost:3000/_/](http://localhost:3000/_/) | `Bypasses Windows Firewall :3000` | **ONLINE** |
+| **PocketBase Dashboard (Tailscale Proxy)** | [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/) | `Firewall-Free Mesh :3000` | **ONLINE** |
+| **PocketBase Dashboard (Direct Port)** | [http://localhost:8090/_/](http://localhost:8090/_/) | `Direct Native :8090` | **ONLINE** |
+| **PocketBase Root Redirect** | [http://localhost:8090](http://localhost:8090) | `Auto-Redirects to /_/` | **ONLINE** |
 | **Antigravity Watcher Telemetry** | [http://localhost:4141](http://localhost:4141) | `HTTP Telemetry :4141` | **ONLINE** |
 | **Watcher Telemetry (Tailnet)** | [http://100.100.56.31:4141](http://100.100.56.31:4141) | `Mesh Telemetry :4141` | **ONLINE** |
 
@@ -17,7 +18,7 @@
 ### PocketBase Superuser Credentials
 - **Superuser Email**: `dev@auracad.local` *(or username: `dev` in app)*
 - **Superuser Password**: `Goto hell 555`
-- **Dashboard Direct URL**: [http://localhost:8090/_/](http://localhost:8090/_/)
+- **Dashboard Direct URL**: [http://localhost:3000/_/](http://localhost:3000/_/) *(or [http://localhost:8090/_/](http://localhost:8090/_/))*
 - **Assigned Roles**: `superagent`, `admin`, `designer`, `agent`
 
 ---
