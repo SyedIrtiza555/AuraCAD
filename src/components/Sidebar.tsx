@@ -10,7 +10,8 @@ import {
   Crown,
   Shield,
   Settings,
-  Database
+  Database,
+  TableProperties
 } from "lucide-react";
 import React from 'react';
 import { PBUser, UserRole } from '../lib/pocketbase';
@@ -19,14 +20,14 @@ interface SidebarProps {
   onNewOrder: () => void;
   isOpen?: boolean;
   onToggle?: () => void;
-  currentModule?: 'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm';
-  onModuleChange?: (module: 'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm') => void;
+  currentModule?: 'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm' | 'creative_tim_orders';
+  onModuleChange?: (module: 'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm' | 'creative_tim_orders') => void;
   onDropToModule?: (module: string, data: any) => void;
   ordersCount?: number;
   clientsCount?: number;
   complaintsCount?: number;
   currentUser?: PBUser;
-  activeRoleView?: 'all' | 'admin' | 'designer' | 'agent';
+  activeRoleView?: 'all' | 'admin' | 'designer' | 'agent' | 'superagent';
   onOpenRoleManager?: () => void;
 }
 
@@ -58,8 +59,8 @@ export function Sidebar({
     );
   }
 
-  const role = currentUser?.role || 'superagent';
-  const isGod = role === 'superagent';
+  const role = currentUser?.role || 'owner';
+  const isGod = role === 'owner' || currentUser?.username === 'dev';
 
   return (
     <aside className="w-56 border-r border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl flex flex-col h-screen shrink-0 relative select-none z-20 transition-all duration-300">
@@ -68,7 +69,7 @@ export function Sidebar({
         <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-[#ff943c]/15 to-purple-500/15 border border-amber-300/60 dark:border-amber-500/40 backdrop-blur-xl shadow-xs">
           <span className="w-2 h-2 rounded-full bg-[#ff943c] shadow-[0_0_8px_rgba(255,148,60,0.9)] animate-pulse" />
           <span className="text-xs font-bold tracking-tight text-slate-900 dark:text-slate-100 font-mono">AuraCAD</span>
-          <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-a</span>
+          <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-b</span>
         </div>
 
         <button 
@@ -108,6 +109,13 @@ export function Sidebar({
               count={ordersCount}
               onClick={() => onModuleChange?.('orders')} 
               onDrop={(data) => onDropToModule?.('orders', data)}
+            />
+            <NavItem 
+              icon={<TableProperties size={15} className="text-blue-500" />} 
+              label="Creative Tim Table" 
+              active={currentModule === 'creative_tim_orders'} 
+              badgeColor="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300"
+              onClick={() => onModuleChange?.('creative_tim_orders')} 
             />
             <NavItem 
               icon={<Users size={15} />} 

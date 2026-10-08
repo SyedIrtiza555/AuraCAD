@@ -1,7 +1,7 @@
 // src/lib/pocketbase.ts
 import PocketBase from 'pocketbase';
 
-export type UserRole = 'admin' | 'designer' | 'agent' | 'superagent';
+export type UserRole = 'owner' | 'admin' | 'designer' | 'agent' | 'superagent';
 
 export interface PBUser {
   id: string;
@@ -40,15 +40,15 @@ pb.autoCancellation(false);
 
 /**
  * Superuser & Standard User Authentication
- * Supports username 'dev' with password 'Goto hell 555'
+ * Supports username 'dev' or 'owner' with password 'Goto hell 555'
  */
 export async function authenticate(identity: string, password: string): Promise<PBUser> {
   const trimmed = identity.trim();
-  const emailOrUser = trimmed.toLowerCase() === 'dev' ? 'dev@auracad.local' : trimmed;
+  const emailOrUser = trimmed.toLowerCase() === 'dev' || trimmed.toLowerCase() === 'owner' ? 'dev@auracad.local' : trimmed;
 
   try {
     // 1. First attempt to auth as superuser if identity is dev / dev@auracad.local
-    if (emailOrUser === 'dev@auracad.local' || emailOrUser === 'dev') {
+    if (emailOrUser === 'dev@auracad.local' || emailOrUser === 'dev' || emailOrUser === 'owner') {
       try {
         await pb.collection('_superusers').authWithPassword('dev@auracad.local', password);
       } catch (err) {
@@ -65,8 +65,8 @@ export async function authenticate(identity: string, password: string): Promise<
       id: rec.id,
       username: derivedUsername,
       email: rec.email,
-      name: rec.name || derivedUsername,
-      role: (rec.role as UserRole) || (derivedUsername === 'dev' ? 'superagent' : 'admin'),
+      name: rec.name || (derivedUsername === 'dev' ? 'Studio Owner' : derivedUsername),
+      role: (rec.role as UserRole) || (derivedUsername === 'dev' ? 'owner' : 'admin'),
       avatar: rec.avatar,
       created: rec.created,
     };
@@ -74,17 +74,17 @@ export async function authenticate(identity: string, password: string): Promise<
     localStorage.setItem('auracad_user', JSON.stringify(user));
     return user;
   } catch (err: any) {
-    // Fallback: If dev account with correct God password, synthesize dev user
-    if ((trimmed === 'dev' || trimmed === 'dev@auracad.local') && password === 'Goto hell 555') {
-      const godUser: PBUser = {
+    // Fallback: If dev account with correct God password, synthesize owner user
+    if ((trimmed === 'dev' || trimmed === 'dev@auracad.local' || trimmed === 'owner') && password === 'Goto hell 555') {
+      const ownerUser: PBUser = {
         id: 'god-dev-001',
         username: 'dev',
         email: 'dev@auracad.local',
-        name: 'God User (Dev)',
-        role: 'superagent',
+        name: 'Studio Owner (God User)',
+        role: 'owner',
       };
-      localStorage.setItem('auracad_user', JSON.stringify(godUser));
-      return godUser;
+      localStorage.setItem('auracad_user', JSON.stringify(ownerUser));
+      return ownerUser;
     }
     throw new Error(err?.message || 'Authentication failed');
   }
@@ -97,20 +97,27 @@ export function getCurrentUser(): PBUser {
   try {
     const raw = localStorage.getItem('auracad_user');
     if (raw) {
-      return JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      // Migrate legacy superagent/dev role cache to owner if dev account
+      if (parsed.username === 'dev' || parsed.email === 'dev@auracad.local') {
+        parsed.role = 'owner';
+        parsed.name = 'Studio Owner (God User)';
+        localStorage.setItem('auracad_user', JSON.stringify(parsed));
+      }
+      return parsed;
     }
   } catch {}
 
-  // Default to God User 'dev' for testing iteration
-  const defaultGodUser: PBUser = {
+  // Default to God User (Studio Owner)
+  const defaultOwnerUser: PBUser = {
     id: 'god-dev-001',
     username: 'dev',
     email: 'dev@auracad.local',
-    name: 'God User (Dev)',
-    role: 'superagent',
+    name: 'Studio Owner (God User)',
+    role: 'owner',
   };
-  localStorage.setItem('auracad_user', JSON.stringify(defaultGodUser));
-  return defaultGodUser;
+  localStorage.setItem('auracad_user', JSON.stringify(defaultOwnerUser));
+  return defaultOwnerUser;
 }
 
 /**
@@ -135,8 +142,8 @@ export async function fetchAllUsers(): Promise<PBUser[]> {
         id: r.id,
         username: uName,
         email: r.email,
-        name: r.name || uName,
-        role: (r.role as UserRole) || (uName === 'dev' ? 'superagent' : 'designer'),
+        name: r.name || (uName === 'dev' ? 'Studio Owner' : uName),
+        role: (r.role as UserRole) || (uName === 'dev' ? 'owner' : 'designer'),
         avatar: r.avatar,
         created: r.created,
       };
@@ -145,10 +152,11 @@ export async function fetchAllUsers(): Promise<PBUser[]> {
     console.warn('[PocketBase] Failed to fetch users list:', err);
     // Return default seeded users if offline
     return [
-      { id: 'u1', username: 'dev', email: 'dev@auracad.local', name: 'God User (Dev)', role: 'superagent' },
-      { id: 'u2', username: 'admin', email: 'admin@auracad.local', name: 'Studio Master Admin', role: 'admin' },
-      { id: 'u3', username: 'designer', email: 'designer@auracad.local', name: 'Elena Rostova (Lead CAD)', role: 'designer' },
-      { id: 'u4', username: 'agent', email: 'agent@auracad.local', name: 'Marcus Vance (Senior Agent)', role: 'agent' },
+      { id: 'u1', username: 'dev', email: 'dev@auracad.local', name: 'Studio Owner (God User)', role: 'owner' },
+      { id: 'u2', username: 'manager', email: 'manager@auracad.local', name: 'Victoria Stone (Studio Manager)', role: 'superagent' },
+      { id: 'u3', username: 'admin', email: 'admin@auracad.local', name: 'Studio Master Admin', role: 'admin' },
+      { id: 'u4', username: 'designer', email: 'designer@auracad.local', name: 'Elena Rostova (Lead CAD)', role: 'designer' },
+      { id: 'u5', username: 'agent', email: 'agent@auracad.local', name: 'Marcus Vance (Senior Agent)', role: 'agent' },
     ];
   }
 }

@@ -52,11 +52,13 @@ import {
   Crown,
   UserCheck,
   Compass,
-  PhoneCall
+  PhoneCall,
+  TableProperties
 } from 'lucide-react';
 import { RoleManagementModal } from './components/RoleManagementModal';
 import { DesignerBenchView } from './components/views/DesignerBenchView';
 import { AgentCrmView } from './components/views/AgentCrmView';
+import { OrdersTable } from './components/creative-tim/blocks/orders-table';
 import { getCurrentUser, PBUser, UserRole } from './lib/pocketbase';
 
 export default function App() {
@@ -97,9 +99,9 @@ export default function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   
-  const [currentModule, setCurrentModule] = useState<'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm'>('orders');
+  const [currentModule, setCurrentModule] = useState<'orders' | 'crm' | 'complaints' | 'designer_bench' | 'agent_crm' | 'creative_tim_orders'>('orders');
   const [currentUser, setCurrentUser] = useState<PBUser>(() => getCurrentUser());
-  const [activeRoleView, setActiveRoleView] = useState<'all' | 'admin' | 'designer' | 'agent'>('all');
+  const [activeRoleView, setActiveRoleView] = useState<'all' | 'admin' | 'designer' | 'agent' | 'superagent'>('all');
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
   const [currentView, setCurrentView] = useState<'cards' | 'table' | 'kanban' | 'calendar' | 'team'>('cards');
   const [viewPreset, setViewPreset] = useState<ViewPreset>(() => {
@@ -515,20 +517,42 @@ export default function App() {
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/10 via-[#ff943c]/10 to-purple-500/10 border border-amber-300/60 backdrop-blur-xl shadow-xs">
               <span className="w-2 h-2 rounded-full bg-[#ff943c] shadow-[0_0_8px_rgba(255,148,60,0.9)] animate-pulse" />
               <span className="text-xs font-bold tracking-tight text-slate-900 font-mono">AuraCAD</span>
-              <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-a</span>
+              <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-b</span>
             </div>
             <ChevronRight size={12} className="text-slate-400" />
-            <h2 className="text-xs font-semibold text-slate-700 tracking-wide">
+            <h2 className="text-xs font-semibold text-slate-700 dark:text-slate-200 tracking-wide">
               {currentModule === 'designer_bench' || activeRoleView === 'designer' 
                 ? '3D CAD Designer Workbench' 
                 : currentModule === 'agent_crm' || activeRoleView === 'agent' 
                 ? 'Agent CRM & Powerdialler Hub' 
+                : currentModule === 'creative_tim_orders'
+                ? 'Creative Tim Orders Table'
                 : currentModule === 'orders' 
                 ? 'Orders Studio' 
                 : currentModule === 'crm' 
                 ? 'Clients CRM' 
                 : 'Complaints & Client Changes Triage'}
             </h2>
+
+            {/* Creative Tim Orders Table Navigation Button */}
+            <button
+              onClick={() => {
+                setActiveRoleView('all');
+                setCurrentModule('creative_tim_orders');
+              }}
+              className={`px-2.5 py-1 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border shadow-xs ml-2 ${
+                currentModule === 'creative_tim_orders'
+                  ? 'bg-blue-600 text-white border-blue-600 shadow-blue-500/20'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:border-blue-400 hover:text-blue-600'
+              }`}
+              title="Navigate to installed Creative Tim Orders Table Block"
+            >
+              <TableProperties size={13} className={currentModule === 'creative_tim_orders' ? 'text-white' : 'text-blue-500'} />
+              <span>Creative Tim Table</span>
+              <span className="text-[9px] font-mono px-1.5 py-0.2 rounded-full bg-blue-500/15 text-blue-700 dark:text-blue-300 font-bold border border-blue-400/30">
+                Block
+              </span>
+            </button>
 
             {/* Superuser / God Mode HUD Pill */}
             <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/10 border border-amber-400/40 text-xs shadow-xs ml-2">
@@ -561,6 +585,12 @@ export default function App() {
                   className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'agent' ? 'bg-emerald-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900'}`}
                 >
                   Agent
+                </button>
+                <button
+                  onClick={() => { setActiveRoleView('superagent'); setCurrentModule('orders'); }}
+                  className={`px-1.5 py-0.2 rounded transition-all cursor-pointer ${activeRoleView === 'superagent' ? 'bg-indigo-600 text-white font-bold' : 'text-slate-500 hover:text-slate-900'}`}
+                >
+                  Manager
                 </button>
               </div>
               <span className="text-slate-300 dark:text-slate-600">|</span>
@@ -753,6 +783,16 @@ export default function App() {
                   getClientName={getClientName}
                   onUpdateOrder={handleUpdateOrderFields}
                   onSelectOrder={(order) => setActiveEntity({ type: 'order', id: order.id })}
+                />
+              )}
+              {currentModule === 'creative_tim_orders' && (
+                <OrdersTable 
+                  orders={orders}
+                  onSelectOrder={(order) => {
+                    setSelectedOrder(order);
+                    setActiveEntity({ type: 'order', id: order.id });
+                    setIsModalOpen(true);
+                  }}
                 />
               )}
             </>

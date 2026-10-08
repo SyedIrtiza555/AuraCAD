@@ -30,8 +30,8 @@ import {
 interface RoleManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeRoleView: 'all' | 'admin' | 'designer' | 'agent';
-  onSelectRoleView: (roleView: 'all' | 'admin' | 'designer' | 'agent') => void;
+  activeRoleView: 'all' | 'admin' | 'designer' | 'agent' | 'superagent';
+  onSelectRoleView: (roleView: 'all' | 'admin' | 'designer' | 'agent' | 'superagent') => void;
   onUserRoleChanged?: (updatedUser: PBUser) => void;
 }
 
@@ -217,10 +217,10 @@ export function RoleManagementModal({
               <span className="text-[11px] text-slate-400">Switch perspectives instantly</span>
             </div>
 
-            <div className="grid grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
               <button
                 onClick={() => onSelectRoleView('all')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   activeRoleView === 'all'
                     ? 'bg-amber-500/10 border-amber-500/60 ring-2 ring-amber-500/20 shadow-xs'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -228,16 +228,33 @@ export function RoleManagementModal({
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs text-amber-700 dark:text-amber-300 mb-1">
                   <Crown size={14} />
-                  <span>God / All Suite</span>
+                  <span>Owner / All</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                   Full studio suite with unrestricted CAD & CRM tools
                 </p>
               </button>
 
               <button
+                onClick={() => onSelectRoleView('superagent')}
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                  activeRoleView === 'superagent'
+                    ? 'bg-indigo-500/10 border-indigo-500/60 ring-2 ring-indigo-500/20 shadow-xs'
+                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-700 dark:text-indigo-300 mb-1">
+                  <Shield size={14} />
+                  <span>Manager UI</span>
+                </div>
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
+                  Superagent manager: pipeline oversight & approvals
+                </p>
+              </button>
+
+              <button
                 onClick={() => onSelectRoleView('admin')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   activeRoleView === 'admin'
                     ? 'bg-blue-500/10 border-blue-500/60 ring-2 ring-blue-500/20 shadow-xs'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -247,14 +264,14 @@ export function RoleManagementModal({
                   <Shield size={14} />
                   <span>Admin UI</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                   Studio oversight, all orders, team workload & financials
                 </p>
               </button>
 
               <button
                 onClick={() => onSelectRoleView('designer')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   activeRoleView === 'designer'
                     ? 'bg-purple-500/10 border-purple-500/60 ring-2 ring-purple-500/20 shadow-xs'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -264,14 +281,14 @@ export function RoleManagementModal({
                   <Compass size={14} />
                   <span>Designer UI</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                   3D CAD WebGL inspection, assigned orders & alloy specs
                 </p>
               </button>
 
               <button
                 onClick={() => onSelectRoleView('agent')}
-                className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
                   activeRoleView === 'agent'
                     ? 'bg-emerald-500/10 border-emerald-500/60 ring-2 ring-emerald-500/20 shadow-xs'
                     : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
@@ -279,9 +296,9 @@ export function RoleManagementModal({
               >
                 <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-700 dark:text-emerald-300 mb-1">
                   <PhoneCall size={14} />
-                  <span>Agent CRM UI</span>
+                  <span>Agent CRM</span>
                 </div>
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight">
+                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
                   High-functionality CRM, powerdialler lead queue & logs
                 </p>
               </button>
@@ -414,15 +431,17 @@ export function RoleManagementModal({
 
                         <td className="py-2.5 px-3">
                           <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${
-                            u.role === 'superagent'
+                            u.role === 'owner'
                               ? 'bg-amber-500/10 text-amber-700 border-amber-300 dark:border-amber-700 dark:text-amber-300'
+                              : u.role === 'superagent'
+                              ? 'bg-indigo-500/10 text-indigo-700 border-indigo-300 dark:border-indigo-700 dark:text-indigo-300'
                               : u.role === 'admin'
                               ? 'bg-blue-500/10 text-blue-700 border-blue-300 dark:border-blue-700 dark:text-blue-300'
                               : u.role === 'designer'
                               ? 'bg-purple-500/10 text-purple-700 border-purple-300 dark:border-purple-700 dark:text-purple-300'
                               : 'bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:border-emerald-700 dark:text-emerald-300'
                           }`}>
-                            {u.role.toUpperCase()}
+                            {u.role === 'owner' ? 'OWNER (GOD)' : u.role === 'superagent' ? 'MANAGER' : u.role.toUpperCase()}
                           </span>
                         </td>
 
@@ -436,7 +455,8 @@ export function RoleManagementModal({
                             <option value="admin">Admin</option>
                             <option value="designer">Designer</option>
                             <option value="agent">Agent</option>
-                            <option value="superagent">Superagent</option>
+                            <option value="superagent">Superagent (Manager)</option>
+                            <option value="owner">Owner (God User)</option>
                           </select>
                         </td>
                       </tr>
