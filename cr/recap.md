@@ -2,65 +2,67 @@
 
 ## Executive Summary & Milestones
 
-1. **Repository Discovery & Synchronization**:
-   - Cloned private repository `SyedIrtiza555/AuraCAD` into `C:\Users\TheAuditLabs\Desktop\Projects\AuraCAD`.
-   - Mirrored changes cleanly into the active workspace `c:\Users\TheAuditLabs\AuraCAD`.
-   - Purged obsolete root patch files (`fix_*.patch`, `patch_*.sh`, `temp.txt`) committed in previous branches.
+1. **Digital Office System Transformation (Branch `v0-b`)**:
+   - Transformed AuraCAD from a fragmented multi-tool into a clean, minimalist, high-velocity **Digital Office System** strictly aligned with the user's relational ER diagram:
+     - **`ORDERS`**: Core bespoke entity (`id`, `order_code`, `name`, `status`, `effort_level`, `order_value`, `created_at`, `designer_id`, `prospect_id`).
+     - **`DESIGNERS`**: Specialists handling orders (`id`, `name`, `email`, `phone`, `specialty`) — *1 Designer → Many Orders*.
+     - **`PROSPECTS`**: Clients commissioning orders (`id`, `name`, `email`, `phone`, `company`) — *1 Prospect → Many Orders*.
+     - **`INVOICES`**: Financial records (`id`, `order_id`, `invoice_number`, `amount`, `status`, `due_date`) — *1 Order ↔ 1 Invoice*.
+     - **`CORRECTIONS`**: Client & designer feedback change requests (`id`, `order_id`, `message`, `created_at`, `attachments`) — *1 Order → Many Corrections*.
+     - **`CORRECTION_ATTACHMENTS`**: Proof and reference images (`id`, `correction_id`, `file_url`, `file_name`).
+     - **`ORDER_STATUS_HISTORY`**: Stage timeline log (`id`, `order_id`, `status`, `start_date`, `end_date`) — *1 Order → Many History Logs* with precise stage duration tracking (`Pending` → `Designing` → `Review` → `Completed`).
 
-2. **Purging AI & Establishing 100% Deterministic FOSS**:
-   - Uninstalled `@google/genai` from `package.json`.
-   - Cleared `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API` in `metadata.json`.
-   - Audited all TypeScript source files: confirmed 0 AI endpoints or external LLM dependencies.
+2. **Purge of Obsolete Pages**:
+   - Completely removed obsolete v0 legacy pages:
+     - 3D CAD bench page & Three.js inspector
+     - CRM dialler page & call simulator
+     - Studio admin & complaints page
+   - De-cluttered component tree, dropping bundle size to `551 kB` and reducing production build time to `< 4.8s`.
 
-3. **FOSS 3D CAD Visualization Engine (Three.js)**:
-   - Built procedural 3D jewelry CAD inspector in [`src/components/Jewelry3DViewer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/Jewelry3DViewer.tsx).
-   - Real-time PBR material rendering for yellow gold, white gold, rose gold, and platinum.
-   - Refractive gemstone shaders for diamond, ruby, sapphire, and emerald.
-   - Integrated into the right-hand inspection drawer alongside standard 2D photos.
+3. **Universal Creative Tim Table System**:
+   - Standardized all 4 main entities on the Creative Tim Table Block architecture:
+     - **Orders Table**: Multi-field search, status filtering, effort level tags (`Urgent`, `High`, `Medium`, `Low`), customer company, assigned designer, order value, and row-click inspector trigger.
+     - **Designers Table**: Staff contact info, jewelry specialties, and live count of active assigned orders.
+     - **Prospects Table**: VIP client portfolio, company, direct contact, total commissioned orders count, and lifetime pipeline value.
+     - **Invoices Table**: 1:1 linked orders, payment status badges (`Paid`, `Sent`, `Draft`, `Overdue`), due dates, financial tallies, and status dropdowns.
+   - All tables include search, pagination, row selections, and JSON export.
 
-4. **TanStack Table Implementation**:
-   - Upgraded Table View ([`src/components/views/Table.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/views/Table.tsx)) with `@tanstack/react-table` v8.
-   - Multi-column sort, real-time multi-field search, multi-row batch actions (`Start`, `Review`, `Deliver`), JSON export, and density switching.
+4. **Sliding Order Detail Inspector Drawer**:
+   - Implemented [`src/components/digital-office/OrderDetailDrawer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/OrderDetailDrawer.tsx):
+     - **Header**: Order code, bespoke piece name, order value, and interactive 4-stage progression bar (`Pending` → `Designing` → `Review` → `Completed`).
+     - **Designer Card (1:N)**: Live designer profile with specialty and 1-click reassign dropdown.
+     - **Prospect Card (1:N)**: VIP client profile with company name and contact info.
+     - **Invoice Card (1:1)**: Linked invoice number, amount, due date, and payment status toggle.
+     - **Status History Timeline**: Visual chronological timeline calculating duration spent in each stage (e.g. `Took 2d 4h` or `Active for 1d 3h`), answering stage turnaround questions.
+     - **Corrections & Change Requests**: Interactive feedback feed with proof attachments, plus an inline "Submit New Correction" form.
 
-5. **Offline Zero-Dead-End Persistence (Dexie.js / IndexedDB)**:
-   - Configured [`src/db/database.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/db/database.ts) with IndexedDB collections for `orders`, `clients`, `prospects`, and `settings`.
-   - Auto-seeding default data on first launch with live reactive UI updates.
+5. **Entity Creation Modals**:
+   - `NewOrderModal.tsx`: Creates new bespoke order, auto-generates linked 1:1 invoice, and seeds initial `Pending` status history interval.
+   - `NewDesignerModal.tsx`: Adds new CAD design specialist.
+   - `NewProspectModal.tsx`: Adds new client / prospect company.
 
-6. **Power-User Desktop Navigation & Shortcut Matrix**:
-   - `J` / `K` list traversal, `1`–`5` status keys, `Space` quick peek, and `Esc` dismiss.
-   - Native clipboard image pasting directly onto active CAD orders.
-   - Desktop shortcuts HUD pill rendered at bottom-left.
+6. **Local-First Zero-Dead-End Persistence (Dexie.js)**:
+   - Configured [`src/db/database.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/db/database.ts) under database name `AuraCAD_DigitalOffice_DB`.
+   - Seeded with comprehensive demo data in [`src/data.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/data.ts).
+   - "Reseed Demo DB" tool available directly in the sidebar footer.
 
-7. **Aura Glass Theming & Tailwind v4 Dark Mode Alignment**:
-   - Fixed Tailwind v4 `@custom-variant dark (&:where(.theme-dark, .theme-dark *))` to prevent light-theme contrast glitches.
-   - Full palette support across both light and dark aesthetics.
-
-8. **PocketBase Backend & God User Superuser Controls**:
-   - Initialized PocketBase v0.25.9 Go/SQLite backend on port `8090` (`http://localhost:8090` / Tailscale `http://100.100.56.31:8090`).
-   - Configured God User Superuser: username `dev` (`dev@auracad.local`) with password `Goto hell 555`.
-   - Setup RBAC role matrix: `owner`, `admin`, `designer`, `agent`, `superagent`.
-   - Built interactive Superuser Role Management console with live role reassignment and user creation.
-   - Created dedicated UI perspectives:
-     - **Admin UI**: Full studio oversight, financial metrics, TanStack table, team workload.
-     - **Designer Workbench**: Centered on Three.js procedural 3D CAD inspector, PBR alloy metals (18K Yellow/White/Rose Gold, Platinum), gemstones (Diamond, Ruby, Sapphire, Emerald), and casting shrinkage/wall thickness safety verification.
-     - **Agent CRM & Powerdialler Hub**: Outbound lead queue with 1-click dial simulation, call timer, outcome tagging ("Qualified", "Bespoke Quote Sent", "Follow-up Needed"), and real-time sync with PocketBase `call_logs`.
-
-9. **Branch v0-b Fork & Creative Tim Block Installation**:
-   - Forked repository to branch **`v0-b`** (`origin/v0-b` tracking) preserving baseline `v0` and `v0-a`.
-   - Removed `dev` user type; God User now holds the role of **Owner** (`owner`), and `superagent` is designated as **Manager**.
-   - Installed the Creative Tim `orders-table` block at [`src/components/creative-tim/blocks/orders-table.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/creative-tim/blocks/orders-table.tsx).
-   - Added dedicated top-bar navigation button (`Creative Tim Table [Block]`) and sidebar link to navigate directly to the installed block.
-   - Dual data mode: supports switching between the original Creative Tim sample catalog and live AuraCAD studio orders.
+7. **Auth & Role Hierarchy**:
+   - God User role set to **`owner`** (`dev@auracad.local` / `Goto hell 555`).
+   - Staff roles: **`superagent`** (Manager), **`admin`** (Studio Master), **`designer`** (CAD Specialist), **`agent`** (Sales/Client Liaison).
+   - Interactive role management console preserved at [`src/components/RoleManagementModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/RoleManagementModal.tsx).
 
 ---
 
 ## Universal Testing Protocol Verification
 
-- **Dev Server**: Vite daemon active on port `3000` with active HMR.
+- **Dev Server**: Vite daemon active on port `3000` with instant HMR:
   - Local URL: [http://localhost:3000](http://localhost:3000)
   - Tailscale Mesh URL: [http://100.100.56.31:3000](http://100.100.56.31:3000)
-- **Production Build**: Verified with `vite build` — 2,145 modules bundled cleanly with 0 errors.
-- **Watcher Bot**: Active error trap embedded in `index.html`.
+- **PocketBase Daemon**: Active on port `8090` (proxied via Vite at `/api/` and `/_/`):
+  - Local Admin UI: [http://localhost:3000/_/](http://localhost:3000/_/)
+  - Tailscale Admin UI: [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/)
+- **Production Build**: Verified with `npm run build` — `✓ built in 4.86s` with 0 errors.
+- **TypeScript Static Analysis**: Verified with `npm run lint` (`tsc --noEmit`) — clean exit code 0.
 
 ---
 

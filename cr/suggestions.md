@@ -2,61 +2,49 @@
 
 ## Implemented Architecture & FOSS Solutions
 
-### 1. FOSS 3D CAD Model Inspection Engine (Three.js) — [COMPLETED]
-- **Implementation**: Procedural 3D jewelry renderer located at [`src/components/Jewelry3DViewer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/Jewelry3DViewer.tsx).
+### 1. Digital Office System Relational Engine — [COMPLETED]
+- **Implementation**: Strict entity relationship model matching the user's ER diagram:
+  - `ORDERS` (1:N with Designers, 1:N with Prospects, 1:1 with Invoices, 1:N with Corrections, 1:N with Status History).
+  - Strongly typed schema in [`src/types.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/types.ts).
+  - Reactive Dexie IndexedDB persistence in [`src/db/database.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/db/database.ts) under `AuraCAD_DigitalOffice_DB`.
+
+### 2. Universal Creative Tim Table Blocks — [COMPLETED]
+- **Implementation**: Reconstructed from Creative Tim block specifications across all 4 entity perspectives:
+  - `OrdersTable`: Search, status filters, effort levels, financial values, and inspector triggers.
+  - `DesignersTableView`: Staff contact directory, CAD specialties, and active handled order counts.
+  - `ProspectsTableView`: VIP client portfolio, direct contacts, order counts, and pipeline totals.
+  - `InvoicesTableView`: 1:1 billing ledger with payment status tracking and export.
+
+### 3. Sliding Order Inspector Drawer with Duration Calculations — [COMPLETED]
+- **Implementation**: [`src/components/digital-office/OrderDetailDrawer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/OrderDetailDrawer.tsx).
 - **Features**:
-  - PBR metal materials: 18K Yellow Gold, 18K White Gold, 18K Rose Gold, 950 Platinum.
-  - Refractive faceted gemstones: Solitaire Diamond, Emerald, Sapphire, Ruby.
-  - Interactive mouse orbit controls, auto-rotation toggle, and wireframe topology inspection.
-  - Integrated into the right-hand Entity Inspector drawer with a clean segmented toggle (3D WebGL vs 2D Photo renders).
-  - 100% local, zero external network requests or proprietary licensing.
+  - Live 4-stage progression bar (`Pending` → `Designing` → `Review` → `Completed`).
+  - Designer and Client relational cards with direct contact links and 1-click reassign.
+  - 1:1 Invoice financial summary with status switcher.
+  - Chronological Status History timeline displaying exact stage duration (e.g. "Took 2d 4h"), answering workflow turnaround questions.
+  - Corrections and feedback feed with image attachments and inline submission form.
 
-### 2. TanStack Table Integration — [COMPLETED]
-- **Implementation**: `@tanstack/react-table` v8 integrated in [`src/components/views/Table.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/views/Table.tsx).
-- **Features**:
-  - Multi-column sortable headers (`ID`, `Title`, `Status`, `Value`, `Due Date`).
-  - Real-time global text filter across order titles, clients, and technical specs.
-  - Row selection checkboxes with floating batch action bar (`Start`, `Review`, `Deliver`).
-  - Native JSON export of filtered datasets.
-  - Ergonomic display density switcher (`Compact` vs `Comfortable`) and page sizing controls.
-
-### 3. Zero-Dead-End Offline Persistence (Dexie.js / IndexedDB) — [COMPLETED]
-- **Implementation**: IndexedDB database layer in [`src/db/database.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/db/database.ts).
-- **Features**:
-  - Strongly typed tables: `orders`, `clients`, `prospects`, `settings`.
-  - Automatic seed migration on first boot with fail-safe fallback to memory state.
-  - Reactive live updates via `useLiveQuery` from `dexie-react-hooks`.
-  - History event tracking on every state transition.
-
-### 4. Desktop Keyboard Shortcut Matrix & Clipboard Integration — [COMPLETED]
-- **Implementation**: Dense desktop shortcuts mapped in [`src/App.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/App.tsx).
-- **Matrix**:
-  - `J` / `K`: Previous / Next order traversal.
-  - `1`–`5`: Rapid status assignment (`1`: Inbox, `2`: In progress, `3`: In Review, `4`: Delivered, `5`: Backlog).
-  - `Space`: Quick peek toggle for the right-hand entity drawer.
-  - `Esc`: Close modals, drawers, and command palettes.
-  - `Ctrl+V` / Paste: Native clipboard image listener that automatically attaches screenshots to the active order.
-  - Floating Desktop Shortcuts HUD pill rendered at the bottom-left of the viewport.
-
-### 5. Elimination of AI / Gemini Dependencies — [COMPLETED]
-- **Directives Executed**:
-  - Removed `@google/genai` dependency and uninstalled AI modules.
-  - Removed `MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API` from `metadata.json`.
-  - Replaced AI concepts with deterministic, local FOSS validation logic (e.g. wall thickness checks, carat weight estimation tables).
+### 4. PocketBase Staff Role Hierarchy — [COMPLETED]
+- **Implementation**: RBAC in [`src/lib/pocketbase.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/lib/pocketbase.ts) & [`src/components/RoleManagementModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/RoleManagementModal.tsx).
+- **Roles**:
+  - `owner`: God User (`dev@auracad.local` / `Goto hell 555`)
+  - `superagent`: Manager role
+  - `admin`: Studio Master
+  - `designer`: CAD Design Specialist
+  - `agent`: Client Liaison / Sales
 
 ---
 
-## Next Architectural Horizons & FOSS Enhancements
+## Proactive Architectural Suggestions & Roadmap
 
-### 1. Direct 3D CAD File Dropper (`.stl` & `.obj` Loader)
-- Integrate Three.js `STLLoader` and `OBJLoader` into `Jewelry3DViewer.tsx`.
-- Allow jewelry designers to drag and drop real MatrixGold/Rhino `.stl` or `.obj` exports straight into the browser window for instant viewport visualization.
+### 1. Stage Turnaround Analytics & Designer Velocity Reporting
+- Leverage the `ORDER_STATUS_HISTORY` dataset (`start_date` and `end_date`) to compute studio-wide operational benchmarks:
+  - Average time spent in `Designing` vs `Review`.
+  - Bottleneck alerts (e.g. flag orders stuck in `Review` for > 3 days).
+  - Designer turnaround benchmarks to see average completion days per designer.
 
-### 2. Deterministic Jewelry Spec & Casting Safety Calculator
-- Implement mathematical formulas in TypeScript for:
-  - Metal casting shrinkage allowance (1.5% - 2.5% depending on alloy).
-  - Carat-to-gram conversion and gold weight estimation based on ring finger size and shank cross-section dimensions.
-  - Wall thickness safety threshold flags (e.g. highlighting warning if shank thickness < 1.0mm for platinum or < 0.8mm for 14K gold).
+### 2. Native Offline Invoice PDF Export
+- Add a client-side vector PDF generator (using deterministic SVG/canvas or `@react-pdf/renderer`) so the studio can generate printable bespoke invoices with order codes and client details directly offline.
 
-### 3. FOSS Client Proofing Export (HTML/PDF Invoice & Spec Sheet)
-- Generate standalone, client-ready printable HTML / PDF proofing sheets with 3D canvas snapshot and dimension details without any server dependencies.
+### 3. Local Drag-and-Drop Image Attachments for Corrections
+- Allow users to drag and drop design proof screenshots directly into the Order Inspector Drawer, storing them as local object URLs or base64 blobs in IndexedDB.

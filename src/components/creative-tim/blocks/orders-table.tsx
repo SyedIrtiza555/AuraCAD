@@ -12,155 +12,83 @@ import {
   ArrowUpDown,
   Eye,
   Copy,
-  ExternalLink
+  ExternalLink,
+  Flame,
+  User,
+  Clock,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
-import { Order } from '../../../types';
+import { Order, OrderStatus, EffortLevel } from '../../../types';
 
 export interface CreativeTimOrderItem {
   id: string;
   orderNumber: string;
+  name: string;
   date: string;
-  status: 'Paid' | 'Refunded' | 'Cancel' | 'In progress' | 'In Review';
-  customerEmail: string;
-  customerAvatar?: string;
-  product: string;
-  revenue: number;
-  originalOrder?: Order;
+  status: OrderStatus;
+  effortLevel: EffortLevel;
+  customerName: string;
+  customerCompany: string;
+  designerName: string;
+  orderValue: number;
+  originalOrder: Order;
 }
-
-// Sample catalog from Creative Tim orders-table demo
-const DEMO_ORDERS: CreativeTimOrderItem[] = [
-  {
-    id: 'ct-1',
-    orderNumber: '#10421',
-    date: '01 Nov 2023, 10:20 AM',
-    status: 'Paid',
-    customerEmail: 'alex.rivera@example.com',
-    product: 'Nike Sport 2 (Titanium Edition)',
-    revenue: 140.20,
-  },
-  {
-    id: 'ct-2',
-    orderNumber: '#10422',
-    date: '01 Nov 2023, 10:53 AM',
-    status: 'Paid',
-    customerEmail: 'sarah.connor@cyberdyne.co',
-    product: 'Velvet Diamond Ring Cushion',
-    revenue: 42.00,
-  },
-  {
-    id: 'ct-3',
-    orderNumber: '#10423',
-    date: '01 Nov 2023, 11:13 AM',
-    status: 'Refunded',
-    customerEmail: 'david.wright@atelier.luxury',
-    product: 'Handmade Alligator Leather Case',
-    revenue: 25.50,
-  },
-  {
-    id: 'ct-4',
-    orderNumber: '#10424',
-    date: '01 Nov 2023, 12:20 AM',
-    status: 'Paid',
-    customerEmail: 'julian.v@vancecap.com',
-    product: 'Platinum Tennis Bracelet Onu-Lino',
-    revenue: 190.40,
-  },
-  {
-    id: 'ct-5',
-    orderNumber: '#10425',
-    date: '01 Nov 2023, 01:40 PM',
-    status: 'Cancel',
-    customerEmail: 'elena.rostova@designhaus.co',
-    product: 'Jewelry Loupe 40x Gold Plated x2',
-    revenue: 200.90,
-  },
-  {
-    id: 'ct-6',
-    orderNumber: '#10426',
-    date: '02 Nov 2023, 09:15 AM',
-    status: 'Paid',
-    customerEmail: 'marcus.vance@crownforge.com',
-    product: 'Custom 18K Bezel Setting Mount',
-    revenue: 840.00,
-  },
-  {
-    id: 'ct-7',
-    orderNumber: '#10427',
-    date: '02 Nov 2023, 02:30 PM',
-    status: 'In progress',
-    customerEmail: 'maya.lin@geoart.studio',
-    product: 'Art Deco Sapphire Choker Links',
-    revenue: 1250.00,
-  },
-  {
-    id: 'ct-8',
-    orderNumber: '#10428',
-    date: '03 Nov 2023, 04:10 PM',
-    status: 'In Review',
-    customerEmail: 'emily.chen@gemstone.org',
-    product: 'Brilliant Cut Solitaire Diamond 1.5ct',
-    revenue: 4200.00,
-  }
-];
 
 interface OrdersTableProps {
   orders?: Order[];
   onSelectOrder?: (order: Order) => void;
+  onUpdateStatus?: (orderId: string, status: OrderStatus) => void;
 }
 
-export function OrdersTable({ orders = [], onSelectOrder }: OrdersTableProps) {
-  const [dataSource, setDataSource] = useState<'auracad' | 'demo'>('auracad');
+export function OrdersTable({ orders = [], onSelectOrder, onUpdateStatus }: OrdersTableProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<'All' | string>('All');
+  const [statusFilter, setStatusFilter] = useState<'All' | OrderStatus>('All');
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [currentPage, setCurrentPage] = useState(1);
   const [showFilters, setShowFilters] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
 
-  // Map AuraCAD orders into Creative Tim table items
+  // Map Digital Office orders into Creative Tim table items
   const tableData: CreativeTimOrderItem[] = useMemo(() => {
-    if (dataSource === 'demo' || orders.length === 0) {
-      return DEMO_ORDERS;
-    }
-
     return orders.map((o) => {
-      let mappedStatus: CreativeTimOrderItem['status'] = 'Paid';
-      if (o.status === 'Delivered') mappedStatus = 'Paid';
-      else if (o.status === 'In progress') mappedStatus = 'In progress';
-      else if (o.status === 'In Review') mappedStatus = 'In Review';
-      else if (o.status === 'Backlog') mappedStatus = 'Cancel';
-      else mappedStatus = 'In progress';
+      const prospectName = o.prospect?.name || 'Private Client';
+      const prospectCompany = o.prospect?.company || 'Direct';
+      const designerName = o.designer?.name || 'Unassigned';
 
       return {
         id: o.id,
-        orderNumber: `#${o.id.replace('ORD-', '')}`,
-        date: new Date(o.createdAt || Date.now()).toLocaleDateString('en-GB', {
+        orderNumber: o.order_code,
+        name: o.name,
+        date: new Date(o.created_at || Date.now()).toLocaleDateString('en-GB', {
           day: '2-digit',
           month: 'short',
-          year: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit'
+          year: 'numeric'
         }),
-        status: mappedStatus,
-        customerEmail: `${o.closer.toLowerCase()}@auracad.local`,
-        product: o.title,
-        revenue: o.value || 3500,
+        status: o.status,
+        effortLevel: o.effort_level,
+        customerName: prospectName,
+        customerCompany: prospectCompany,
+        designerName: designerName,
+        orderValue: o.order_value,
         originalOrder: o
       };
     });
-  }, [dataSource, orders]);
+  }, [orders]);
 
   // Filter & Search
   const filteredData = useMemo(() => {
     return tableData.filter((item) => {
+      const query = searchQuery.toLowerCase();
       const matchesSearch = 
-        item.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.product.toLowerCase().includes(searchQuery.toLowerCase());
+        item.orderNumber.toLowerCase().includes(query) ||
+        item.name.toLowerCase().includes(query) ||
+        item.customerName.toLowerCase().includes(query) ||
+        item.customerCompany.toLowerCase().includes(query) ||
+        item.designerName.toLowerCase().includes(query);
       
       const matchesStatus = statusFilter === 'All' || item.status === statusFilter;
 
@@ -195,18 +123,20 @@ export function OrdersTable({ orders = [], onSelectOrder }: OrdersTableProps) {
 
   const handleExport = () => {
     const rows = filteredData.map(d => ({
-      Order: d.orderNumber,
+      OrderCode: d.orderNumber,
+      PieceName: d.name,
       Date: d.date,
       Status: d.status,
-      Customer: d.customerEmail,
-      Product: d.product,
-      Revenue: `$${d.revenue.toFixed(2)}`
+      EffortLevel: d.effortLevel,
+      Customer: `${d.customerName} (${d.customerCompany})`,
+      Designer: d.designerName,
+      Value: `$${d.orderValue.toFixed(2)}`
     }));
     const blob = new Blob([JSON.stringify(rows, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `creative-tim-orders-${new Date().toISOString().split('T')[0]}.json`;
+    a.download = `digital-office-orders-${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -217,51 +147,41 @@ export function OrdersTable({ orders = [], onSelectOrder }: OrdersTableProps) {
     setTimeout(() => setCopiedId(null), 1500);
   };
 
-  const getStatusBadge = (status: CreativeTimOrderItem['status']) => {
+  const getStatusBadge = (status: OrderStatus) => {
     switch (status) {
-      case 'Paid':
+      case 'Completed':
         return (
-          <span 
-            data-slot="badge" 
-            className="inline-flex items-center justify-center rounded-md border border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 gap-1 overflow-hidden w-max shadow-xs"
-          >
-            Paid
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+            Completed
           </span>
         );
-      case 'Refunded':
+      case 'Designing':
         return (
-          <span 
-            data-slot="badge" 
-            className="inline-flex items-center justify-center rounded-md border border-blue-500/30 bg-blue-500/10 text-blue-700 dark:text-blue-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 gap-1 overflow-hidden w-max shadow-xs"
-          >
-            Refunded
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-500/10 text-orange-700 dark:text-orange-400 border border-orange-500/30 animate-pulse">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#ff943c]" />
+            Designing
           </span>
         );
-      case 'Cancel':
+      case 'Review':
         return (
-          <span 
-            data-slot="badge" 
-            className="inline-flex items-center justify-center rounded-md border border-rose-500/30 bg-rose-500/10 text-rose-700 dark:text-rose-400 px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 gap-1 overflow-hidden w-max shadow-xs"
-          >
-            Cancel
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
+            Review
           </span>
         );
-      case 'In progress':
+      case 'Pending':
         return (
-          <span 
-            data-slot="badge" 
-            className="inline-flex items-center justify-center rounded-md border border-purple-500/30 bg-purple-500/10 text-purple-700 dark:text-purple-300 px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 gap-1 overflow-hidden w-max shadow-xs"
-          >
-            In progress
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+            Pending
           </span>
         );
-      case 'In Review':
+      case 'Cancelled':
         return (
-          <span 
-            data-slot="badge" 
-            className="inline-flex items-center justify-center rounded-md border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 px-2 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 gap-1 overflow-hidden w-max shadow-xs"
-          >
-            In Review
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-400 border border-rose-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-500" />
+            Cancelled
           </span>
         );
       default:
@@ -273,303 +193,309 @@ export function OrdersTable({ orders = [], onSelectOrder }: OrdersTableProps) {
     }
   };
 
+  const getEffortBadge = (effort: EffortLevel) => {
+    switch (effort) {
+      case 'Urgent':
+        return (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-400/20">
+            <Flame size={11} className="text-rose-500" />
+            Urgent
+          </span>
+        );
+      case 'High':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-400/20">
+            High
+          </span>
+        );
+      case 'Medium':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-400/20">
+            Medium
+          </span>
+        );
+      case 'Low':
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-500/10 text-slate-600 dark:text-slate-400 border border-slate-400/20">
+            Low
+          </span>
+        );
+    }
+  };
+
   return (
-    <div className="w-full bg-slate-50 dark:bg-slate-950 p-4 md:p-6 select-none font-sans">
-      {/* Creative Tim Orders Table Card */}
-      <div 
-        data-slot="card" 
-        className="bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 flex flex-col gap-6 rounded-2xl border border-slate-200 dark:border-slate-800 py-6 shadow-sm overflow-hidden"
-      >
-        {/* Card Header */}
-        <div 
-          data-slot="card-header" 
-          className="m-0 flex w-full flex-wrap items-center justify-between gap-4 px-6 pb-2"
-        >
-          <div>
-            <div className="flex items-center gap-3">
-              <h2 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Orders Table
-              </h2>
-              <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 font-semibold">
-                @creative-tim/ui block
-              </span>
-            </div>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Comprehensive orders tracking table with real-time filters, selection checkboxes, and action triggers
-            </p>
+    <div className="w-full flex flex-col gap-4">
+      {/* Top Banner / Metric Bar */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+              Bespoke Studio Orders
+            </h1>
+            <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+              {filteredData.length} records
+            </span>
           </div>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+            Digital office pipeline • Click any order to inspect designer allocation, client history, invoice, and corrections
+          </p>
+        </div>
 
-          <div className="flex w-full items-center gap-2.5 sm:w-max">
-            {/* Data Source Switcher */}
-            <div className="flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
-              <button
-                onClick={() => setDataSource('auracad')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  dataSource === 'auracad'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                AuraCAD Studio ({orders.length})
-              </button>
-              <button
-                onClick={() => setDataSource('demo')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
-                  dataSource === 'demo'
-                    ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-                }`}
-              >
-                Demo Catalog (8)
-              </button>
-            </div>
+        {/* Global Toolbar */}
+        <div className="flex items-center gap-2 self-end sm:self-auto">
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition-all cursor-pointer ${
+              showFilters || statusFilter !== 'All'
+                ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-300'
+                : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+            }`}
+          >
+            <Filter size={13} />
+            <span>Filter</span>
+            {statusFilter !== 'All' && (
+              <span className="w-1.5 h-1.5 rounded-full bg-blue-600" />
+            )}
+          </button>
 
-            {/* Filter Toggle Button */}
-            <button 
-              onClick={() => setShowFilters(!showFilters)}
-              data-slot="button" 
-              className={`justify-center whitespace-nowrap rounded-lg text-xs font-semibold transition-all border shadow-xs h-8 px-3 flex items-center gap-1.5 cursor-pointer ${
-                showFilters 
-                  ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 border-slate-900' 
-                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+          <button
+            onClick={handleExport}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer shadow-xs active:scale-98"
+          >
+            <Download size={13} />
+            <span>Export JSON</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Filter Ribbon */}
+      {showFilters && (
+        <div className="p-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 flex flex-wrap items-center gap-2 text-xs">
+          <span className="text-slate-500 font-medium mr-1">Status:</span>
+          {(['All', 'Pending', 'Designing', 'Review', 'Completed', 'Cancelled'] as const).map((st) => (
+            <button
+              key={st}
+              onClick={() => {
+                setStatusFilter(st);
+                setCurrentPage(1);
+              }}
+              className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                statusFilter === st
+                  ? 'bg-blue-600 text-white shadow-xs'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
               }`}
             >
-              <Filter className="h-3.5 w-3.5" />
-              <span>Filter</span>
+              {st}
             </button>
+          ))}
+        </div>
+      )}
 
-            {/* Export Button */}
-            <button 
-              onClick={handleExport}
-              data-slot="button" 
-              className="justify-center whitespace-nowrap rounded-lg text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 h-8 px-3 flex items-center gap-1.5 cursor-pointer"
-            >
-              <Download className="h-3.5 w-3.5" />
-              <span>Export</span>
-            </button>
+      {/* Creative Tim Orders Table Container */}
+      <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
+        {/* Table Search & Mass Selection Header */}
+        <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 flex items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="relative flex-1 max-w-sm">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+            <input
+              type="text"
+              placeholder="Search code, piece, customer, designer..."
+              value={searchQuery}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                setCurrentPage(1);
+              }}
+              className="w-full pl-9 pr-3 py-1.5 rounded-xl text-xs bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-900 dark:text-slate-100 placeholder:text-slate-400"
+            />
+          </div>
+
+          <div className="text-xs text-slate-500 font-mono">
+            {selectedIds.size > 0 ? (
+              <span className="text-blue-600 font-semibold">{selectedIds.size} selected</span>
+            ) : (
+              <span>Showing {paginatedData.length} of {filteredData.length}</span>
+            )}
           </div>
         </div>
 
-        {/* Collapsible Filter Bar */}
-        {showFilters && (
-          <div className="mx-6 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/80 flex flex-wrap items-center gap-3 text-xs animate-in fade-in duration-150">
-            <div className="relative flex-1 min-w-[200px]">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Search by ID, customer email, product..."
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="w-full pl-8 pr-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-
-            <div className="flex items-center gap-2">
-              <span className="text-slate-500 font-medium">Status:</span>
-              <select
-                value={statusFilter}
-                onChange={(e) => {
-                  setStatusFilter(e.target.value);
-                  setCurrentPage(1);
-                }}
-                className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 font-medium cursor-pointer"
-              >
-                <option value="All">All Statuses</option>
-                <option value="Paid">Paid</option>
-                <option value="In progress">In progress</option>
-                <option value="In Review">In Review</option>
-                <option value="Refunded">Refunded</option>
-                <option value="Cancel">Cancel</option>
-              </select>
-            </div>
-
-            {(searchQuery || statusFilter !== 'All') && (
-              <button
-                onClick={() => {
-                  setSearchQuery('');
-                  setStatusFilter('All');
-                  setCurrentPage(1);
-                }}
-                className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Selected Banner */}
-        {selectedIds.size > 0 && (
-          <div className="mx-6 px-4 py-2 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 rounded-xl flex items-center justify-between text-xs text-blue-800 dark:text-blue-300">
-            <span className="font-semibold">{selectedIds.size} row(s) selected</span>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setSelectedIds(new Set())}
-                className="hover:underline font-medium"
-              >
-                Deselect All
-              </button>
-              <button
-                onClick={handleExport}
-                className="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-500 cursor-pointer"
-              >
-                Export Selected
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Table Content */}
-        <div data-slot="card-content" className="overflow-x-auto rounded-none p-0">
-          <table className="w-full min-w-max table-auto text-left border-collapse">
+        {/* The Table */}
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50/70 dark:bg-slate-800/40 border-y border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400">
-                <th className="p-4 w-12">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={paginatedData.length > 0 && selectedIds.size === paginatedData.length}
-                      onChange={toggleSelectAll}
-                      className="size-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                      id="select-all"
-                    />
-                    <label htmlFor="select-all" className="cursor-pointer">ID</label>
+              <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-slate-500 font-medium">
+                <th className="p-3.5 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={paginatedData.length > 0 && selectedIds.size === paginatedData.length}
+                    onChange={toggleSelectAll}
+                    className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">
+                  <div className="flex items-center gap-1.5 cursor-pointer">
+                    <span>Order Code</span>
+                    <ArrowUpDown size={11} className="text-slate-400" />
                   </div>
                 </th>
-                <th className="p-4">Date</th>
-                <th className="p-4">Status</th>
-                <th className="p-4">Customer</th>
-                <th className="p-4">Product / Piece</th>
-                <th className="p-4">Revenue</th>
-                <th className="p-4 w-12 text-end"></th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Bespoke Jewelry Piece</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Customer / Prospect</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Assigned Designer</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Effort</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Status</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300 text-right">Value</th>
+                <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300 text-center w-24">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80 text-xs">
+
+            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
               {paginatedData.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-400 dark:text-slate-500">
-                    No matching orders found. Try adjusting your search query or status filter.
+                  <td colSpan={9} className="p-8 text-center text-slate-400">
+                    No bespoke orders match the current filter or search criteria.
                   </td>
                 </tr>
               ) : (
                 paginatedData.map((item) => {
-                  const isChecked = selectedIds.has(item.id);
+                  const isSelected = selectedIds.has(item.id);
+
                   return (
-                    <tr 
-                      key={item.id} 
-                      className={`transition-colors ${
-                        isChecked 
-                          ? 'bg-blue-50/50 dark:bg-blue-950/20' 
-                          : 'hover:bg-slate-50/80 dark:hover:bg-slate-800/50'
+                    <tr
+                      key={item.id}
+                      onClick={() => onSelectOrder?.(item.originalOrder)}
+                      className={`group transition-colors hover:bg-blue-50/40 dark:hover:bg-blue-950/20 cursor-pointer ${
+                        isSelected ? 'bg-blue-50/60 dark:bg-blue-950/30' : ''
                       }`}
                     >
-                      {/* ID with Checkbox */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            checked={isChecked}
-                            onChange={() => toggleSelectRow(item.id)}
-                            className="size-4 rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
-                            id={`check-${item.id}`}
-                          />
-                          <label 
-                            htmlFor={`check-${item.id}`} 
-                            className="font-mono font-medium text-slate-900 dark:text-slate-100 cursor-pointer"
-                          >
+                      <td 
+                        className="p-3.5 text-center" 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleSelectRow(item.id);
+                        }}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                        />
+                      </td>
+
+                      {/* Order Code */}
+                      <td className="p-3.5 font-mono font-bold text-slate-900 dark:text-slate-100">
+                        <div className="flex items-center gap-1.5">
+                          <span className="hover:text-blue-600 underline-offset-2 hover:underline">
                             {item.orderNumber}
-                          </label>
+                          </span>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              copyToClipboard(item.orderNumber, item.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 p-1 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-opacity"
+                            title="Copy Order Code"
+                          >
+                            {copiedId === item.id ? <Check size={11} className="text-emerald-500" /> : <Copy size={11} />}
+                          </button>
                         </div>
                       </td>
 
-                      {/* Date */}
-                      <td className="p-4 text-slate-600 dark:text-slate-300">
-                        {item.date}
-                      </td>
-
-                      {/* Status */}
-                      <td className="p-4">
-                        {getStatusBadge(item.status)}
-                      </td>
-
-                      {/* Customer */}
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <div className="size-6 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-[10px] uppercase">
-                            {item.customerEmail.charAt(0)}
+                      {/* Piece Name & Creation Date */}
+                      <td className="p-3.5 font-medium text-slate-900 dark:text-slate-100">
+                        <div>
+                          <div className="font-semibold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 transition-colors">
+                            {item.name}
                           </div>
-                          <span className="text-slate-700 dark:text-slate-300 font-medium">
-                            {item.customerEmail}
+                          <div className="text-[11px] text-slate-400">
+                            Created {item.date}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Prospect / Customer */}
+                      <td className="p-3.5 text-slate-700 dark:text-slate-300">
+                        <div>
+                          <div className="font-semibold text-slate-800 dark:text-slate-200">
+                            {item.customerName}
+                          </div>
+                          <div className="text-[11px] text-slate-400">
+                            {item.customerCompany}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Designer */}
+                      <td className="p-3.5 text-slate-700 dark:text-slate-300">
+                        <div className="flex items-center gap-1.5">
+                          <span className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center text-[10px] font-bold">
+                            {item.designerName.charAt(0)}
+                          </span>
+                          <span className="font-medium text-slate-800 dark:text-slate-200">
+                            {item.designerName}
                           </span>
                         </div>
                       </td>
 
-                      {/* Product */}
-                      <td className="p-4">
-                        <span className="font-medium text-slate-900 dark:text-slate-100">
-                          {item.product}
-                        </span>
+                      {/* Effort Level */}
+                      <td className="p-3.5">
+                        {getEffortBadge(item.effortLevel)}
                       </td>
 
-                      {/* Revenue */}
-                      <td className="p-4 font-mono font-semibold text-slate-900 dark:text-slate-100">
-                        ${item.revenue.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      {/* Status */}
+                      <td className="p-3.5">
+                        {getStatusBadge(item.status)}
                       </td>
 
-                      {/* Actions Dropdown */}
-                      <td className="p-4 text-end">
-                        <DropdownMenu.Root>
-                          <DropdownMenu.Trigger asChild>
-                            <button 
-                              data-slot="dropdown-menu-trigger" 
-                              className="inline-flex items-center justify-center size-8 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                              aria-label="Actions"
-                            >
-                              <EllipsisVertical className="size-4" />
-                            </button>
-                          </DropdownMenu.Trigger>
+                      {/* Order Value */}
+                      <td className="p-3.5 text-right font-mono font-bold text-slate-900 dark:text-slate-100">
+                        ${item.orderValue.toLocaleString()}
+                      </td>
 
-                          <DropdownMenu.Portal>
-                            <DropdownMenu.Content 
-                              className="z-50 min-w-[160px] bg-white dark:bg-slate-800 rounded-xl p-1.5 shadow-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-700 dark:text-slate-200 animate-in fade-in-80"
-                              sideOffset={5}
-                              align="end"
-                            >
-                              {item.originalOrder && onSelectOrder && (
-                                <DropdownMenu.Item 
-                                  onClick={() => onSelectOrder(item.originalOrder!)}
-                                  className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer outline-none font-medium"
-                                >
-                                  <Eye className="size-3.5 text-blue-500" />
-                                  <span>Inspect CAD Order</span>
-                                </DropdownMenu.Item>
-                              )}
+                      {/* Actions */}
+                      <td 
+                        className="p-3.5 text-center" 
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => onSelectOrder?.(item.originalOrder)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40 transition-colors cursor-pointer"
+                            title="Inspect Order Details & History"
+                          >
+                            <Eye size={13} />
+                          </button>
 
-                              <DropdownMenu.Item 
-                                onClick={() => copyToClipboard(item.orderNumber, item.id)}
-                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer outline-none font-medium"
+                          <DropdownMenu.Root>
+                            <DropdownMenu.Trigger asChild>
+                              <button 
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                title="Change Status"
                               >
-                                {copiedId === item.id ? <Check className="size-3.5 text-emerald-500" /> : <Copy className="size-3.5" />}
-                                <span>{copiedId === item.id ? 'Copied!' : 'Copy Order ID'}</span>
-                              </DropdownMenu.Item>
-
-                              <DropdownMenu.Separator className="h-px bg-slate-200 dark:bg-slate-700 my-1" />
-
-                              <DropdownMenu.Item 
-                                onClick={() => {
-                                  alert(`Order ${item.orderNumber} receipt exported.`);
-                                }}
-                                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer outline-none font-medium"
+                                <EllipsisVertical size={13} />
+                              </button>
+                            </DropdownMenu.Trigger>
+                            <DropdownMenu.Portal>
+                              <DropdownMenu.Content 
+                                className="min-w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-lg text-xs z-50 animate-in fade-in-50 zoom-in-95"
+                                sideOffset={5}
                               >
-                                <Download className="size-3.5" />
-                                <span>Export Invoice</span>
-                              </DropdownMenu.Item>
-                            </DropdownMenu.Content>
-                          </DropdownMenu.Portal>
-                        </DropdownMenu.Root>
+                                <DropdownMenu.Label className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                                  Quick Status Change
+                                </DropdownMenu.Label>
+                                {(['Pending', 'Designing', 'Review', 'Completed', 'Cancelled'] as OrderStatus[]).map((st) => (
+                                  <DropdownMenu.Item
+                                    key={st}
+                                    onClick={() => onUpdateStatus?.(item.id, st)}
+                                    className="flex items-center justify-between px-2 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer outline-none"
+                                  >
+                                    <span>{st}</span>
+                                    {item.status === st && <Check size={12} className="text-blue-600" />}
+                                  </DropdownMenu.Item>
+                                ))}
+                              </DropdownMenu.Content>
+                            </DropdownMenu.Portal>
+                          </DropdownMenu.Root>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -579,36 +505,27 @@ export function OrdersTable({ orders = [], onSelectOrder }: OrdersTableProps) {
           </table>
         </div>
 
-        {/* Card Footer with Pagination */}
-        <div 
-          data-slot="card-footer" 
-          className="flex flex-wrap items-center justify-between gap-4 px-6 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs"
-        >
-          <p className="text-slate-500 dark:text-slate-400">
+        {/* Pagination Footer */}
+        <div className="p-3.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40 dark:bg-slate-900/40">
+          <div>
             Page <span className="font-semibold text-slate-800 dark:text-slate-200">{currentPage}</span> of{' '}
-            <span className="font-semibold text-slate-800 dark:text-slate-200">{totalPages}</span>{' '}
-            ({filteredData.length} total orders)
-          </p>
+            <span className="font-semibold text-slate-800 dark:text-slate-200">{totalPages}</span>
+          </div>
 
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
-              disabled={currentPage <= 1}
-              data-slot="button" 
-              className="justify-center whitespace-nowrap text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none h-8 rounded-lg px-3 flex items-center gap-1.5 cursor-pointer"
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
             >
-              <ChevronLeft className="h-4 w-4" />
-              <span>Prev</span>
+              <ChevronLeft size={13} />
             </button>
-
-            <button 
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
-              disabled={currentPage >= totalPages}
-              data-slot="button" 
-              className="justify-center whitespace-nowrap text-xs font-semibold transition-all border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs hover:bg-slate-100 dark:hover:bg-slate-700 disabled:opacity-40 disabled:pointer-events-none h-8 rounded-lg px-3 flex items-center gap-1.5 cursor-pointer"
+            <button
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-800 disabled:opacity-30 disabled:cursor-not-allowed hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 cursor-pointer transition-colors"
             >
-              <span>Next</span>
-              <ChevronRight className="h-4 w-4" />
+              <ChevronRight size={13} />
             </button>
           </div>
         </div>

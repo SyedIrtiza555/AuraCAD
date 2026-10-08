@@ -1,6 +1,24 @@
+// src/db/database.ts
+// Digital Office System Dexie IndexedDB Store
 import Dexie, { Table } from 'dexie';
-import { Order, Client, Prospect, OrderStatus } from '../types';
-import { INITIAL_ORDERS, INITIAL_CLIENTS, INITIAL_PROSPECTS } from '../data';
+import { 
+  Order, 
+  Designer, 
+  Prospect, 
+  Invoice, 
+  Correction, 
+  OrderStatusHistory, 
+  OrderStatus,
+  CorrectionAttachment
+} from '../types';
+import { 
+  INITIAL_ORDERS, 
+  INITIAL_DESIGNERS, 
+  INITIAL_PROSPECTS, 
+  INITIAL_INVOICES, 
+  INITIAL_CORRECTIONS, 
+  INITIAL_STATUS_HISTORY 
+} from '../data';
 
 export interface AppSetting {
   key: string;
@@ -9,16 +27,22 @@ export interface AppSetting {
 
 export class AuraCADDatabase extends Dexie {
   orders!: Table<Order, string>;
-  clients!: Table<Client, string>;
+  designers!: Table<Designer, string>;
   prospects!: Table<Prospect, string>;
+  invoices!: Table<Invoice, string>;
+  corrections!: Table<Correction, string>;
+  status_history!: Table<OrderStatusHistory, string>;
   settings!: Table<AppSetting, string>;
 
   constructor() {
-    super('AuraCAD_DB');
+    super('AuraCAD_DigitalOffice_DB');
     this.version(1).stores({
-      orders: 'id, clientId, status, orderType, priority, dueDate, createdAt, designer, closer, production, prospectId',
-      clients: 'id, name, email, status',
-      prospects: 'id, name, stage, agent, designer, jewelryType, orderId',
+      orders: 'id, order_code, name, status, effort_level, order_value, created_at, designer_id, prospect_id',
+      designers: 'id, name, email, phone',
+      prospects: 'id, name, email, phone, company',
+      invoices: 'id, order_id, invoice_number, status, due_date',
+      corrections: 'id, order_id, created_at',
+      status_history: 'id, order_id, status, start_date, end_date',
       settings: 'key'
     });
   }
@@ -27,18 +51,28 @@ export class AuraCADDatabase extends Dexie {
 export const db = new AuraCADDatabase();
 
 /**
- * Ensures initial default data is seeded if the local database is fresh.
+ * Initializes and seeds the Dexie local database with initial seed data.
  */
 export async function initializeDatabase(): Promise<void> {
   try {
     const orderCount = await db.orders.count();
     if (orderCount === 0) {
-      await db.transaction('rw', [db.orders, db.clients, db.prospects], async () => {
-        await db.clients.bulkPut(INITIAL_CLIENTS);
-        await db.orders.bulkPut(INITIAL_ORDERS);
+      await db.transaction('rw', [
+        db.orders, 
+        db.designers, 
+        db.prospects, 
+        db.invoices, 
+        db.corrections, 
+        db.status_history
+      ], async () => {
+        await db.designers.bulkPut(INITIAL_DESIGNERS);
         await db.prospects.bulkPut(INITIAL_PROSPECTS);
+        await db.orders.bulkPut(INITIAL_ORDERS);
+        await db.invoices.bulkPut(INITIAL_INVOICES);
+        await db.corrections.bulkPut(INITIAL_CORRECTIONS);
+        await db.status_history.bulkPut(INITIAL_STATUS_HISTORY);
       });
-      console.log('⚡ [AuraCAD DB] Seeded initial clients, orders, and prospects into IndexedDB.');
+      console.log('⚡ [AuraCAD Digital Office] Seeded Designers, Prospects, Orders, Invoices, Corrections, and Status History.');
     }
   } catch (error) {
     console.error('Failed to initialize local IndexedDB database:', error);
@@ -49,68 +83,222 @@ export async function initializeDatabase(): Promise<void> {
  * Resets database back to default seed data.
  */
 export async function resetDatabaseToDefaults(): Promise<void> {
-  await db.transaction('rw', [db.orders, db.clients, db.prospects], async () => {
+  await db.transaction('rw', [
+    db.orders, 
+    db.designers, 
+    db.prospects, 
+    db.invoices, 
+    db.corrections, 
+    db.status_history
+  ], async () => {
     await db.orders.clear();
-    await db.clients.clear();
+    await db.designers.clear();
     await db.prospects.clear();
-    await db.clients.bulkPut(INITIAL_CLIENTS);
-    await db.orders.bulkPut(INITIAL_ORDERS);
+    await db.invoices.clear();
+    await db.corrections.clear();
+    await db.status_history.clear();
+
+    await db.designers.bulkPut(INITIAL_DESIGNERS);
     await db.prospects.bulkPut(INITIAL_PROSPECTS);
+    await db.orders.bulkPut(INITIAL_ORDERS);
+    await db.invoices.bulkPut(INITIAL_INVOICES);
+    await db.corrections.bulkPut(INITIAL_CORRECTIONS);
+    await db.status_history.bulkPut(INITIAL_STATUS_HISTORY);
   });
+  console.log('🔄 [AuraCAD Digital Office] Reset database to default clean seed.');
 }
 
 // -------------------------------------------------------------
-// Type-safe CRUD Handlers with Automatic History & Consistency
+// Relational Resolution Handlers
 // -------------------------------------------------------------
 
-export async function dbAddOrder(order: Order): Promise<void> {
-  const finalOrder: Order = {
+/**
+ * Enriches a single order with its linked designer, prospect, invoice, corrections, and status history.
+ */
+export async function dbEnrichOrder(order: Order): Promise<Order> {
+  const [designer, prospect, invoice, corrections, status_history] = await Promise.all([
+    order.designer_id ? db.designers.get(order.designer_id) : Promise.resolve(undefined),
+    order.prospect_id ? db.prospects.get(order.prospect_id) : Promise.resolve(undefined),
+    db.invoices.where('order_id').equals(order.id).first(),
+    db.corrections.where('order_id').equals(order.id).toArray(),
+    db.status_history.where('order_id').equals(order.id).toArray()
+  ]);
+
+  // Sort status history chronologically
+  const sortedHistory = status_history.sort(
+    (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
+  );
+
+  return {
     ...order,
-    createdAt: order.createdAt || new Date().toISOString(),
-    history: order.history || [{ status: order.status, date: new Date().toISOString() }],
-    designerMessages: order.designerMessages || [],
-    corrections: order.corrections || []
+    designer,
+    prospect,
+    invoice,
+    corrections: corrections.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    status_history: sortedHistory
   };
-  await db.orders.put(finalOrder);
+}
+
+/**
+ * Gets all orders enriched with their relations.
+ */
+export async function dbGetEnrichedOrders(): Promise<Order[]> {
+  const allOrders = await db.orders.toArray();
+  return Promise.all(allOrders.map(dbEnrichOrder));
+}
+
+// -------------------------------------------------------------
+// Orders CRUD & Status History Lifecycle
+// -------------------------------------------------------------
+
+export async function dbAddOrder(
+  order: Omit<Order, 'id'>, 
+  customInvoiceAmount?: number
+): Promise<Order> {
+  const newId = `ord-${Date.now().toString(36)}`;
+  const now = new Date().toISOString();
+  
+  const fullOrder: Order = {
+    ...order,
+    id: newId,
+    created_at: order.created_at || now.split('T')[0]
+  };
+
+  // 1:1 Invoice
+  const newInvoice: Invoice = {
+    id: `inv-${Date.now().toString(36)}`,
+    order_id: newId,
+    invoice_number: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+    amount: customInvoiceAmount ?? fullOrder.order_value,
+    status: 'Sent',
+    created_at: fullOrder.created_at,
+    due_date: new Date(Date.now() + 14 * 86400000).toISOString().split('T')[0]
+  };
+
+  // Initial Status History record
+  const initialHistory: OrderStatusHistory = {
+    id: `sh-${Date.now().toString(36)}`,
+    order_id: newId,
+    status: fullOrder.status,
+    start_date: now,
+    end_date: null // Active
+  };
+
+  await db.transaction('rw', [db.orders, db.invoices, db.status_history], async () => {
+    await db.orders.put(fullOrder);
+    await db.invoices.put(newInvoice);
+    await db.status_history.put(initialHistory);
+  });
+
+  return dbEnrichOrder(fullOrder);
 }
 
 export async function dbUpdateOrder(id: string, updates: Partial<Order>): Promise<void> {
-  const current = await db.orders.get(id);
-  if (!current) return;
+  await db.orders.update(id, updates);
+}
 
-  const nextHistory = [...(current.history || [])];
-  if (updates.status && updates.status !== current.status) {
-    nextHistory.push({
-      status: updates.status,
-      date: new Date().toISOString()
-    });
-  }
+/**
+ * Updates order status and automatically closes the active status history log and opens a new active one.
+ */
+export async function dbUpdateOrderStatus(orderId: string, newStatus: OrderStatus): Promise<void> {
+  const now = new Date().toISOString();
+  
+  await db.transaction('rw', [db.orders, db.status_history], async () => {
+    // 1. Update order
+    await db.orders.update(orderId, { status: newStatus });
 
-  await db.orders.update(id, {
-    ...updates,
-    history: nextHistory
+    // 2. Find currently active status history item for this order
+    const activeHistory = await db.status_history
+      .where('order_id')
+      .equals(orderId)
+      .and(item => item.end_date === null)
+      .first();
+
+    if (activeHistory) {
+      await db.status_history.update(activeHistory.id, { end_date: now });
+    }
+
+    // 3. Create new active status history log
+    const nextHistory: OrderStatusHistory = {
+      id: `sh-${Date.now().toString(36)}`,
+      order_id: orderId,
+      status: newStatus,
+      start_date: now,
+      end_date: null
+    };
+
+    await db.status_history.put(nextHistory);
   });
 }
 
 export async function dbDeleteOrder(id: string): Promise<void> {
-  await db.orders.delete(id);
+  await db.transaction('rw', [db.orders, db.invoices, db.corrections, db.status_history], async () => {
+    await db.orders.delete(id);
+    await db.invoices.where('order_id').equals(id).delete();
+    await db.corrections.where('order_id').equals(id).delete();
+    await db.status_history.where('order_id').equals(id).delete();
+  });
 }
 
-export async function dbAddClient(client: Client): Promise<void> {
-  await db.clients.put(client);
+// -------------------------------------------------------------
+// Corrections CRUD (1:N)
+// -------------------------------------------------------------
+
+export async function dbAddCorrection(
+  orderId: string, 
+  message: string, 
+  authorName: string = 'Staff / Customer',
+  attachments: CorrectionAttachment[] = []
+): Promise<Correction> {
+  const newCorrection: Correction = {
+    id: `cor-${Date.now().toString(36)}`,
+    order_id: orderId,
+    message,
+    created_at: new Date().toISOString(),
+    author_name: authorName,
+    attachments
+  };
+
+  await db.corrections.put(newCorrection);
+  return newCorrection;
 }
 
-export async function dbUpdateClient(id: string, updates: Partial<Client>): Promise<void> {
-  await db.clients.update(id, updates);
+export async function dbDeleteCorrection(correctionId: string): Promise<void> {
+  await db.corrections.delete(correctionId);
 }
 
-export async function dbDeleteClient(id: string): Promise<void> {
-  // Cascading check: ensure we don't orphan orders without notice
-  await db.clients.delete(id);
+// -------------------------------------------------------------
+// Designers CRUD
+// -------------------------------------------------------------
+
+export async function dbAddDesigner(designer: Omit<Designer, 'id'>): Promise<Designer> {
+  const newDesigner: Designer = {
+    ...designer,
+    id: `des-${Date.now().toString(36)}`
+  };
+  await db.designers.put(newDesigner);
+  return newDesigner;
 }
 
-export async function dbAddProspect(prospect: Prospect): Promise<void> {
-  await db.prospects.put(prospect);
+export async function dbUpdateDesigner(id: string, updates: Partial<Designer>): Promise<void> {
+  await db.designers.update(id, updates);
+}
+
+export async function dbDeleteDesigner(id: string): Promise<void> {
+  await db.designers.delete(id);
+}
+
+// -------------------------------------------------------------
+// Prospects CRUD
+// -------------------------------------------------------------
+
+export async function dbAddProspect(prospect: Omit<Prospect, 'id'>): Promise<Prospect> {
+  const newProspect: Prospect = {
+    ...prospect,
+    id: `prosp-${Date.now().toString(36)}`
+  };
+  await db.prospects.put(newProspect);
+  return newProspect;
 }
 
 export async function dbUpdateProspect(id: string, updates: Partial<Prospect>): Promise<void> {
@@ -121,56 +309,10 @@ export async function dbDeleteProspect(id: string): Promise<void> {
   await db.prospects.delete(id);
 }
 
-export async function dbConvertProspectToOrder(prospectId: string, baseOrder: Partial<Order>): Promise<Order> {
-  const prospect = await db.prospects.get(prospectId);
-  if (!prospect) throw new Error(`Prospect ${prospectId} not found`);
+// -------------------------------------------------------------
+// Invoices CRUD (1:1 with Orders)
+// -------------------------------------------------------------
 
-  // Ensure client exists or create one
-  let clientId = `CLI-${Date.now().toString(36).toUpperCase()}`;
-  const existingClient = await db.clients.where('name').equalsIgnoreCase(prospect.name).first();
-  if (existingClient) {
-    clientId = existingClient.id;
-  } else {
-    await db.clients.put({
-      id: clientId,
-      name: prospect.name,
-      email: prospect.email,
-      phone: prospect.phone,
-      status: 'Active',
-      notes: `Converted from prospect. Initial budget: $${prospect.budget}`
-    });
-  }
-
-  const orderId = `ORD-${Date.now().toString(36).toUpperCase()}`;
-  const newOrder: Order = {
-    id: orderId,
-    title: baseOrder.title || `${prospect.jewelryType || 'Custom'} Bespoke Piece`,
-    clientId,
-    closer: prospect.agent || 'Alex',
-    designer: prospect.designer || 'Abdullah',
-    production: 'Crown Castings',
-    status: 'In progress',
-    orderType: (baseOrder.orderType as any) || 'Ring',
-    dueDate: prospect.targetDueDate || new Date(Date.now() + 86400000 * 14).toISOString().split('T')[0],
-    notes: prospect.notes || '',
-    value: prospect.budget || 5000,
-    createdAt: new Date().toISOString(),
-    prospectId: prospect.id,
-    images: prospect.images || [],
-    cadStage: 'Initial Wireframe',
-    priority: 'High',
-    history: [{ status: 'In progress', date: new Date().toISOString() }],
-    designerMessages: [],
-    corrections: []
-  };
-
-  await db.transaction('rw', [db.orders, db.prospects], async () => {
-    await db.orders.put(newOrder);
-    await db.prospects.update(prospectId, {
-      stage: 'Approved / Active Order',
-      orderId: newOrder.id
-    });
-  });
-
-  return newOrder;
+export async function dbUpdateInvoice(id: string, updates: Partial<Invoice>): Promise<void> {
+  await db.invoices.update(id, updates);
 }
