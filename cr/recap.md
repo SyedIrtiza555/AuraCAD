@@ -39,9 +39,21 @@
    - **Full-Screen Responsive Sheets**: Upgraded all Modals and Drawers with `useMediaQuery('(max-width: 768px)')` to open full-screen sheets on mobile without awkward clipping.
    - **Watcher Bot Proxy Integration**: Configured `agy-watcher-hub.mjs` with `--proxy 3000` listening on `0.0.0.0:4141` for real-time mobile error trapping and element inspection over Tailscale (`http://100.100.56.31:4141`).
 
-6. **Quality & Verification Checks**:
+6. **RBAC Role-Tailored UIs & Direct URL Routing** [NEW]:
+   - **URL Query & Path Routing**: Direct deep-linking to role-specific interfaces (`?role=owner`, `?role=superagent`, `?role=admin`, `?role=designer`, `?role=agent` or `/owner`, `/designer`, etc.) with seamless `window.history.pushState` updates.
+   - **Role Switcher Dropdown**: Real-time role selector pill in the top header with 1-click URL copy button.
+   - **Owner (God)**: Studio Executive KPI ribbon (Total Pipeline, Invoiced/Collected, In-Design count, QA bottlenecks), access to all 4 modules, DB reseed, and PocketBase console.
+   - **Superagent (Manager)**: Manager Quality Review Gate highlighting pieces in `Review` requiring sign-off with 1-click approval to `Completed` (Billing & Invoices isolated).
+   - **Admin (Operations)**: Operations oversight strip, designer allocation, client onboarding, invoice status updates.
+   - **Designer (CAD)**: Dedicated Artisan Workbench filtered strictly to assigned orders (with designer switcher for `FU`, `ER`, `MA`, `AT`), status progression stepper (`Pending` ➔ `Designing` ➔ `Review`), corrections feed with markup attachments. Financial amounts (`order_value`, invoices) and client contact details are confidential and masked.
+   - **Agent (Client Intake)**: Client CRM portfolio view, bespoke order intake with live 3-part PK generator, and client change request logging.
+   - **Desktop Ergonomics**: Cleaned up obsolete mobile docks/drawers and purged legacy CRM dialler / 3D CAD bench remnants per user specifications.
+
+7. **Quality & Verification Checks**:
    - TypeScript Check: `tsc --noEmit` exited cleanly with code 0.
-   - Endpoints: All endpoints (`localhost:3000`, `localhost:4141`, `100.100.56.31:3000`, `100.100.56.31:4141`) responding with HTTP 200 OK.
+   - Production Build: `npm run build` compiled 2,565 modules in 7.25s with code 0.
+   - Active Daemons: PocketBase (port 8090) and Vite Dev Server (port 3000) running with HMR.
+   - Direct URLs: Tested and verified all role routes (`?role=owner`, `?role=designer`, etc.) returning HTTP 200 OK.
 
 ---
 
