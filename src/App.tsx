@@ -39,6 +39,7 @@ import { DesignersTableView } from './components/digital-office/DesignersTableVi
 import { ProspectsTableView } from './components/digital-office/ProspectsTableView';
 import { InvoicesTableView } from './components/digital-office/InvoicesTableView';
 import { OrderDetailDrawer } from './components/digital-office/OrderDetailDrawer';
+import { OrderDetailsSection } from './components/digital-office/OrderDetailsSection';
 import { NewOrderModal } from './components/digital-office/NewOrderModal';
 import { NewDesignerModal } from './components/digital-office/NewDesignerModal';
 import { NewProspectModal } from './components/digital-office/NewProspectModal';
@@ -66,7 +67,9 @@ import {
   RefreshCw,
   Search,
   CheckCircle2,
-  Clock
+  Clock,
+  Layers,
+  Eye
 } from 'lucide-react';
 
 export default function App() {
@@ -116,7 +119,7 @@ export default function App() {
   const [activeRoleView, setActiveRoleView] = useState<'all' | 'admin' | 'designer' | 'agent' | 'superagent'>('all');
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
 
-  // 3. Navigation & Modules (Orders | Designers | Prospects | Invoices)
+  // 3. Navigation & Modules (Orders | Designers | Prospects | Invoices | Order Details)
   const [currentModule, setCurrentModule] = useState<'orders' | 'designers' | 'prospects' | 'invoices'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -126,6 +129,7 @@ export default function App() {
   const [isNewDesignerOpen, setIsNewDesignerOpen] = useState(false);
   const [isNewProspectOpen, setIsNewProspectOpen] = useState(false);
   const [preselectedProspect, setPreselectedProspect] = useState<Prospect | null>(null);
+  const [orderViewMode, setOrderViewMode] = useState<'table' | 'details'>('table');
 
   // Keep selectedOrder in sync when orders update
   useEffect(() => {
@@ -184,14 +188,13 @@ export default function App() {
   };
 
   const handleCreateOrder = async (orderData: {
-    order_code: string;
     name: string;
     status: OrderStatus;
     effort_level: EffortLevel;
     order_value: number;
-    created_at: string;
     designer_id: string;
     prospect_id: string;
+    custom_order_code?: string;
   }) => {
     const newOrd = await dbAddOrder(orderData);
     setSelectedOrder(newOrd);
@@ -199,6 +202,7 @@ export default function App() {
 
   const handleCreateDesigner = async (designerData: {
     name: string;
+    code: string;
     email: string;
     phone: string;
     specialty: string;
@@ -214,6 +218,7 @@ export default function App() {
 
   const handleCreateProspect = async (prospectData: {
     name: string;
+    code: string;
     company: string;
     email: string;
     phone: string;
@@ -292,7 +297,10 @@ export default function App() {
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {/* 1. Orders */}
           <button
-            onClick={() => setCurrentModule('orders')}
+            onClick={() => {
+              setCurrentModule('orders');
+              setOrderViewMode('table');
+            }}
             className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               currentModule === 'orders'
                 ? 'bg-blue-600 text-white shadow-xs'
@@ -430,7 +438,7 @@ export default function App() {
             </span>
             <span className="text-slate-300 dark:text-slate-700">/</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 capitalize">
-              {currentModule === 'orders' && 'Bespoke Studio Orders'}
+              {currentModule === 'orders' && (orderViewMode === 'details' && selectedOrder ? `Order: ${selectedOrder.order_code}` : 'Bespoke Studio Orders')}
               {currentModule === 'designers' && 'CAD Design Specialists'}
               {currentModule === 'prospects' && 'Clients & Prospects'}
               {currentModule === 'invoices' && 'Invoices & Billing'}
@@ -438,6 +446,32 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-3">
+            {/* View Mode Switcher when in Orders Module */}
+            {currentModule === 'orders' && selectedOrder && (
+              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+                <button
+                  onClick={() => setOrderViewMode('table')}
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    orderViewMode === 'table'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  Table View
+                </button>
+                <button
+                  onClick={() => setOrderViewMode('details')}
+                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    orderViewMode === 'details'
+                      ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
+                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                  }`}
+                >
+                  Details Section
+                </button>
+              </div>
+            )}
+
             {/* PocketBase Live Indicator */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono">
               <span className={`w-2 h-2 rounded-full ${
@@ -487,11 +521,38 @@ export default function App() {
         {/* Content View Container */}
         <div className="flex-1 overflow-y-auto p-6">
           {currentModule === 'orders' && (
-            <OrdersTable 
-              orders={orders}
-              onSelectOrder={handleSelectOrder}
-              onUpdateStatus={handleUpdateOrderStatus}
-            />
+            orderViewMode === 'details' && selectedOrder ? (
+              <div className="max-w-5xl mx-auto space-y-4">
+                <button
+                  onClick={() => setOrderViewMode('table')}
+                  className="text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer font-semibold mb-2"
+                >
+                  ← Back to Orders Table
+                </button>
+                <OrderDetailsSection 
+                  order={selectedOrder}
+                  designers={designers}
+                  prospects={prospects}
+                  invoices={invoices}
+                  corrections={corrections}
+                  statusHistory={statusHistory}
+                  onClose={() => setOrderViewMode('table')}
+                  onUpdateStatus={handleUpdateOrderStatus}
+                  onUpdateDesigner={handleUpdateOrderDesigner}
+                  onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
+                  onAddCorrection={handleAddCorrection}
+                />
+              </div>
+            ) : (
+              <OrdersTable 
+                orders={orders}
+                onSelectOrder={(ord) => {
+                  handleSelectOrder(ord);
+                  // In addition to drawer, user can toggle directly
+                }}
+                onUpdateStatus={handleUpdateOrderStatus}
+              />
+            )
           )}
 
           {currentModule === 'designers' && (
@@ -527,7 +588,7 @@ export default function App() {
         </div>
       </main>
 
-      {/* Order Detail Inspector Drawer */}
+      {/* Order Detail Inspector Drawer (Mantine Drawer wrapping OrderDetailsSection) */}
       <OrderDetailDrawer 
         order={selectedOrder}
         designers={designers}
@@ -542,7 +603,7 @@ export default function App() {
         onAddCorrection={handleAddCorrection}
       />
 
-      {/* New Order Modal */}
+      {/* New Order Modal (Mantine UI Modal with live 3-part PK generator) */}
       <NewOrderModal 
         isOpen={isNewOrderOpen}
         designers={designers}
@@ -555,14 +616,14 @@ export default function App() {
         onSubmit={handleCreateOrder}
       />
 
-      {/* New Designer Modal */}
+      {/* New Designer Modal (Mantine UI Modal with Designer Code input) */}
       <NewDesignerModal 
         isOpen={isNewDesignerOpen}
         onClose={() => setIsNewDesignerOpen(false)}
         onSubmit={handleCreateDesigner}
       />
 
-      {/* New Prospect Modal */}
+      {/* New Prospect Modal (Mantine UI Modal with Client Code input) */}
       <NewProspectModal 
         isOpen={isNewProspectOpen}
         onClose={() => setIsNewProspectOpen(false)}

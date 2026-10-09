@@ -171,11 +171,16 @@ export function ProspectsTableView({
                             {prospect.name.charAt(0)}
                           </span>
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
-                              {prospect.name}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 transition-colors">
+                                {prospect.name}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded font-mono font-bold text-[10px] bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-400/20">
+                                {prospect.code}
+                              </span>
                             </div>
                             <div className="text-[10px] font-mono text-slate-400">
-                              ID: {prospect.id}
+                              Code: {prospect.code} • ID: {prospect.id}
                             </div>
                           </div>
                         </div>

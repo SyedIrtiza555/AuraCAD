@@ -1,25 +1,39 @@
 // src/components/digital-office/NewProspectModal.tsx
 import React, { useState } from 'react';
-import { X, Building2, User, Mail, Phone } from 'lucide-react';
+import { Modal, TextInput, Button, Group, Stack, Text, Grid } from '@mantine/core';
+import { Building2 } from 'lucide-react';
 
 interface NewProspectModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (prospect: {
     name: string;
+    code: string;
+    company: string;
     email: string;
     phone: string;
-    company: string;
   }) => void;
 }
 
 export function NewProspectModal({ isOpen, onClose, onSubmit }: NewProspectModalProps) {
-  if (!isOpen) return null;
-
   const [name, setName] = useState('');
+  const [code, setCode] = useState('');
   const [company, setCompany] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
+
+  // Auto-generate 2-letter client code from company or name
+  const handleCompanyChange = (val: string) => {
+    setCompany(val);
+    if (!code || code.length <= 2) {
+      const parts = val.trim().split(/\s+/);
+      if (parts.length >= 2) {
+        setCode((parts[0][0] + parts[1][0]).toUpperCase());
+      } else if (parts[0]?.length >= 2) {
+        setCode(parts[0].slice(0, 2).toUpperCase());
+      }
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +41,7 @@ export function NewProspectModal({ isOpen, onClose, onSubmit }: NewProspectModal
 
     onSubmit({
       name: name.trim(),
+      code: code.trim().toUpperCase() || 'CLI',
       company: company.trim() || 'Direct Client',
       email: email.trim() || `${name.toLowerCase().replace(/\s+/g, '.')}@client.com`,
       phone: phone.trim() || '+1 555-0199'
@@ -36,99 +51,85 @@ export function NewProspectModal({ isOpen, onClose, onSubmit }: NewProspectModal
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs animate-in fade-in duration-150">
-      <div 
-        className="w-full max-w-md bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-150 text-xs"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600" />
-            <h2 className="font-bold text-sm text-slate-900 dark:text-slate-100">
-              Add Client / Prospect Portfolio
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-          >
-            <X size={16} />
-          </button>
-        </div>
+    <Modal
+      opened={isOpen}
+      onClose={onClose}
+      title={
+        <Group gap="xs">
+          <Building2 size={18} className="text-teal-500" />
+          <Text fw={700} size="sm">Add Client / Prospect Portfolio</Text>
+        </Group>
+      }
+      radius="lg"
+      size="md"
+      overlayProps={{ backgroundOpacity: 0.4, blur: 3 }}
+    >
+      <form onSubmit={handleSubmit}>
+        <Stack gap="sm">
+          <TextInput
+            label="Client Contact Name"
+            placeholder="e.g. Sarah Jenkins or Richard Davenport"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            required
+            size="sm"
+          />
 
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Client Contact Name
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Richard Davenport"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              required
-              className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 8 }}>
+              <TextInput
+                label="Company / Brand"
+                placeholder="e.g. Crown Atelier or Davenport Fine Diamonds"
+                value={company}
+                onChange={(e) => handleCompanyChange(e.target.value)}
+                required
+                size="sm"
+              />
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 4 }}>
+              <TextInput
+                label="Client Code"
+                placeholder="e.g. CA, VC"
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                required
+                size="sm"
+                description="Used in Order PK"
+              />
+            </Grid.Col>
+          </Grid>
 
-          <div>
-            <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Company / Brand / Family Office
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Davenport Fine Diamonds Ltd"
-              value={company}
-              onChange={(e) => setCompany(e.target.value)}
-              className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Email
-              </label>
-              <input
-                type="email"
-                placeholder="richard@davenport.com"
+          <Grid>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput
+                label="Email"
+                placeholder="client@company.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                size="sm"
               />
-            </div>
-
-            <div>
-              <label className="block font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                Phone
-              </label>
-              <input
-                type="text"
+            </Grid.Col>
+            <Grid.Col span={{ base: 12, sm: 6 }}>
+              <TextInput
+                label="Phone"
                 placeholder="+1 555-0188"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                size="sm"
               />
-            </div>
-          </div>
+            </Grid.Col>
+          </Grid>
 
-          <div className="pt-2 flex items-center justify-end gap-2 border-t border-slate-200 dark:border-slate-800">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-xl text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 font-semibold transition-colors cursor-pointer"
-            >
+          <Group justify="flex-end" mt="md">
+            <Button variant="default" onClick={onClose} size="sm">
               Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold transition-all shadow-xs cursor-pointer active:scale-98"
-            >
+            </Button>
+            <Button type="submit" color="teal" size="sm">
               Add Prospect
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+            </Button>
+          </Group>
+        </Stack>
+      </form>
+    </Modal>
   );
 }

@@ -1,5 +1,5 @@
 // src/db/database.ts
-// Digital Office System Dexie IndexedDB Store
+// Digital Office System Dexie IndexedDB Store with Mantine UI & Order Code PK
 import Dexie, { Table } from 'dexie';
 import { 
   Order, 
@@ -9,7 +9,8 @@ import {
   Correction, 
   OrderStatusHistory, 
   OrderStatus,
-  CorrectionAttachment
+  CorrectionAttachment,
+  formatOrderCode
 } from '../types';
 import { 
   INITIAL_ORDERS, 
@@ -35,11 +36,11 @@ export class AuraCADDatabase extends Dexie {
   settings!: Table<AppSetting, string>;
 
   constructor() {
-    super('AuraCAD_DigitalOffice_DB');
+    super('AuraCAD_DigitalOffice_v2');
     this.version(1).stores({
       orders: 'id, order_code, name, status, effort_level, order_value, created_at, designer_id, prospect_id',
-      designers: 'id, name, email, phone',
-      prospects: 'id, name, email, phone, company',
+      designers: 'id, code, name, email, phone',
+      prospects: 'id, code, name, email, phone, company',
       invoices: 'id, order_id, invoice_number, status, due_date',
       corrections: 'id, order_id, created_at',
       status_history: 'id, order_id, status, start_date, end_date',
@@ -124,7 +125,6 @@ export async function dbEnrichOrder(order: Order): Promise<Order> {
     db.status_history.where('order_id').equals(order.id).toArray()
   ]);
 
-  // Sort status history chronologically
   const sortedHistory = status_history.sort(
     (a, b) => new Date(a.start_date).getTime() - new Date(b.start_date).getTime()
   );
@@ -148,26 +148,50 @@ export async function dbGetEnrichedOrders(): Promise<Order[]> {
 }
 
 // -------------------------------------------------------------
-// Orders CRUD & Status History Lifecycle
+// Orders CRUD & Status History Lifecycle (Order Code as PK)
 // -------------------------------------------------------------
 
 export async function dbAddOrder(
-  order: Omit<Order, 'id'>, 
+  orderInput: {
+    name: string;
+    status: OrderStatus;
+    effort_level: Order['effort_level'];
+    order_value: number;
+    designer_id: string;
+    prospect_id: string;
+    custom_order_code?: string;
+  }, 
   customInvoiceAmount?: number
 ): Promise<Order> {
-  const newId = `ord-${Date.now().toString(36)}`;
+  // Resolve designer code and prospect code
+  const designer = await db.designers.get(orderInput.designer_id);
+  const prospect = await db.prospects.get(orderInput.prospect_id);
+
+  const designerCode = designer?.code || 'DES';
+  const clientCode = prospect?.code || 'CLI';
+
+  // Construct PK: <DesignerCode>-<ClientCode>-<OrderName>
+  const finalCode = orderInput.custom_order_code?.trim() || 
+    formatOrderCode(designerCode, clientCode, orderInput.name);
+
   const now = new Date().toISOString();
   
   const fullOrder: Order = {
-    ...order,
-    id: newId,
-    created_at: order.created_at || now.split('T')[0]
+    id: finalCode, // Order code is PK
+    order_code: finalCode,
+    name: orderInput.name.trim(),
+    status: orderInput.status,
+    effort_level: orderInput.effort_level,
+    order_value: orderInput.order_value,
+    created_at: now.split('T')[0],
+    designer_id: orderInput.designer_id,
+    prospect_id: orderInput.prospect_id
   };
 
-  // 1:1 Invoice
+  // 1:1 Invoice linked by order.id (the order code)
   const newInvoice: Invoice = {
     id: `inv-${Date.now().toString(36)}`,
-    order_id: newId,
+    order_id: fullOrder.id,
     invoice_number: `INV-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
     amount: customInvoiceAmount ?? fullOrder.order_value,
     status: 'Sent',
@@ -178,7 +202,7 @@ export async function dbAddOrder(
   // Initial Status History record
   const initialHistory: OrderStatusHistory = {
     id: `sh-${Date.now().toString(36)}`,
-    order_id: newId,
+    order_id: fullOrder.id,
     status: fullOrder.status,
     start_date: now,
     end_date: null // Active
@@ -204,7 +228,7 @@ export async function dbUpdateOrderStatus(orderId: string, newStatus: OrderStatu
   const now = new Date().toISOString();
   
   await db.transaction('rw', [db.orders, db.status_history], async () => {
-    // 1. Update order
+    // 1. Update order status
     await db.orders.update(orderId, { status: newStatus });
 
     // 2. Find currently active status history item for this order
@@ -247,7 +271,7 @@ export async function dbDeleteOrder(id: string): Promise<void> {
 export async function dbAddCorrection(
   orderId: string, 
   message: string, 
-  authorName: string = 'Staff / Customer',
+  authorName: string = 'Staff / Client',
   attachments: CorrectionAttachment[] = []
 ): Promise<Correction> {
   const newCorrection: Correction = {

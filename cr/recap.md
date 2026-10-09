@@ -2,67 +2,40 @@
 
 ## Executive Summary & Milestones
 
-1. **Digital Office System Transformation (Branch `v0-b`)**:
-   - Transformed AuraCAD from a fragmented multi-tool into a clean, minimalist, high-velocity **Digital Office System** strictly aligned with the user's relational ER diagram:
-     - **`ORDERS`**: Core bespoke entity (`id`, `order_code`, `name`, `status`, `effort_level`, `order_value`, `created_at`, `designer_id`, `prospect_id`).
-     - **`DESIGNERS`**: Specialists handling orders (`id`, `name`, `email`, `phone`, `specialty`) — *1 Designer → Many Orders*.
-     - **`PROSPECTS`**: Clients commissioning orders (`id`, `name`, `email`, `phone`, `company`) — *1 Prospect → Many Orders*.
-     - **`INVOICES`**: Financial records (`id`, `order_id`, `invoice_number`, `amount`, `status`, `due_date`) — *1 Order ↔ 1 Invoice*.
-     - **`CORRECTIONS`**: Client & designer feedback change requests (`id`, `order_id`, `message`, `created_at`, `attachments`) — *1 Order → Many Corrections*.
-     - **`CORRECTION_ATTACHMENTS`**: Proof and reference images (`id`, `correction_id`, `file_url`, `file_name`).
-     - **`ORDER_STATUS_HISTORY`**: Stage timeline log (`id`, `order_id`, `status`, `start_date`, `end_date`) — *1 Order → Many History Logs* with precise stage duration tracking (`Pending` → `Designing` → `Review` → `Completed`).
+1. **Mantine UI Integration**:
+   - Installed `@mantine/core` and `@mantine/hooks` for standard-compliant, accessible, and robust UI rendering without irregularities.
+   - Wrapped root application with `<MantineProvider>` in [`src/main.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/main.tsx) with custom luxury typography and color schemes.
+   - Integrated `@mantine/core/styles.css` with zero styling conflicts against Tailwind v4.
 
-2. **Purge of Obsolete Pages**:
-   - Completely removed obsolete v0 legacy pages:
-     - 3D CAD bench page & Three.js inspector
-     - CRM dialler page & call simulator
-     - Studio admin & complaints page
-   - De-cluttered component tree, dropping bundle size to `551 kB` and reducing production build time to `< 4.8s`.
+2. **3-Part Order Code Primary Key (PK) Implementation**:
+   - Implemented the user's exact specification:
+     $$\text{Order Code (PK)} = \langle\text{DesignerCode}\rangle\text{-}\langle\text{ClientCode}\rangle\text{-}\langle\text{OrderName}\rangle$$
+     e.g. `FU-CA-Three stone ring`
+   - Added `code` to Designers (`FU` for Farooq Qureshi, `ER` for Elena Rostova, `MA` for Muneeb Al-Mansoor, `AT` for Abdullah Tariq).
+   - Added `code` to Prospects (`CA` for Crown Atelier / Sarah Jenkins, `VC` for Vance Capital, `LA` for Lin Atelier, etc.).
+   - Re-indexed Dexie IndexedDB (`AuraCAD_DigitalOffice_v2`) with the 3-part Order Code as the primary key.
 
-3. **Universal Creative Tim Table System**:
-   - Standardized all 4 main entities on the Creative Tim Table Block architecture:
-     - **Orders Table**: Multi-field search, status filtering, effort level tags (`Urgent`, `High`, `Medium`, `Low`), customer company, assigned designer, order value, and row-click inspector trigger.
-     - **Designers Table**: Staff contact info, jewelry specialties, and live count of active assigned orders.
-     - **Prospects Table**: VIP client portfolio, company, direct contact, total commissioned orders count, and lifetime pipeline value.
-     - **Invoices Table**: 1:1 linked orders, payment status badges (`Paid`, `Sent`, `Draft`, `Overdue`), due dates, financial tallies, and status dropdowns.
-   - All tables include search, pagination, row selections, and JSON export.
+3. **Mantine Powered Order Details Section**:
+   - Built [`src/components/digital-office/OrderDetailsSection.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/OrderDetailsSection.tsx):
+     - **Order PK Breakdown**: Interactive visual badges showing `[FU: Designer]` - `[CA: Client]` - `[Three stone ring: Piece]` with 1-click Copy PK button.
+     - **Interactive Status Flow**: Stepper buttons (`Pending` → `Designing` → `Review` → `Completed`) with immediate status history logging and Dexie persistence.
+     - **Relational Summary Cards**:
+       - *Designer Specialist Card (1:N)*: Displays designer code, specialty, contact details, and reassign select dropdown.
+       - *Client / Prospect Card (1:N)*: Displays client code, company, contact details, and VIP badge.
+       - *Linked Invoice (1:1)*: Displays invoice number, due date, amount, and payment status changer.
+     - **Status History Timeline**: Mantine `Timeline` calculating turnaround duration for each stage (e.g. "Designing: 2d 4h", "Review: 1d 1h", active duration).
+     - **Corrections & Change Requests**: Message thread with proof attachments and an inline form to submit new change requests with instant Dexie persistence.
 
-4. **Sliding Order Detail Inspector Drawer**:
-   - Implemented [`src/components/digital-office/OrderDetailDrawer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/OrderDetailDrawer.tsx):
-     - **Header**: Order code, bespoke piece name, order value, and interactive 4-stage progression bar (`Pending` → `Designing` → `Review` → `Completed`).
-     - **Designer Card (1:N)**: Live designer profile with specialty and 1-click reassign dropdown.
-     - **Prospect Card (1:N)**: VIP client profile with company name and contact info.
-     - **Invoice Card (1:1)**: Linked invoice number, amount, due date, and payment status toggle.
-     - **Status History Timeline**: Visual chronological timeline calculating duration spent in each stage (e.g. `Took 2d 4h` or `Active for 1d 3h`), answering stage turnaround questions.
-     - **Corrections & Change Requests**: Interactive feedback feed with proof attachments, plus an inline "Submit New Correction" form.
+4. **Creation Modals Updated with Mantine UI**:
+   - [`NewOrderModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/NewOrderModal.tsx): Live preview of the 3-part PK `<DesignerCode>-<ClientCode>-<OrderName>` as the user selects designer and client.
+   - [`NewDesignerModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/NewDesignerModal.tsx): Prompts for designer name and designer code.
+   - [`NewProspectModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/NewProspectModal.tsx): Prompts for client name and client code.
+   - [`OrderDetailDrawer.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/digital-office/OrderDetailDrawer.tsx): Mantine `Drawer` wrapping `OrderDetailsSection`.
 
-5. **Entity Creation Modals**:
-   - `NewOrderModal.tsx`: Creates new bespoke order, auto-generates linked 1:1 invoice, and seeds initial `Pending` status history interval.
-   - `NewDesignerModal.tsx`: Adds new CAD design specialist.
-   - `NewProspectModal.tsx`: Adds new client / prospect company.
-
-6. **Local-First Zero-Dead-End Persistence (Dexie.js)**:
-   - Configured [`src/db/database.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/db/database.ts) under database name `AuraCAD_DigitalOffice_DB`.
-   - Seeded with comprehensive demo data in [`src/data.ts`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/data.ts).
-   - "Reseed Demo DB" tool available directly in the sidebar footer.
-
-7. **Auth & Role Hierarchy**:
-   - God User role set to **`owner`** (`dev@auracad.local` / `Goto hell 555`).
-   - Staff roles: **`superagent`** (Manager), **`admin`** (Studio Master), **`designer`** (CAD Specialist), **`agent`** (Sales/Client Liaison).
-   - Interactive role management console preserved at [`src/components/RoleManagementModal.tsx`](file:///C:/Users/TheAuditLabs/Desktop/Projects/AuraCAD/src/components/RoleManagementModal.tsx).
-
----
-
-## Universal Testing Protocol Verification
-
-- **Dev Server**: Vite daemon active on port `3000` with instant HMR:
-  - Local URL: [http://localhost:3000](http://localhost:3000)
-  - Tailscale Mesh URL: [http://100.100.56.31:3000](http://100.100.56.31:3000)
-- **PocketBase Daemon**: Active on port `8090` (proxied via Vite at `/api/` and `/_/`):
-  - Local Admin UI: [http://localhost:3000/_/](http://localhost:3000/_/)
-  - Tailscale Admin UI: [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/)
-- **Production Build**: Verified with `npm run build` — `✓ built in 4.86s` with 0 errors.
-- **TypeScript Static Analysis**: Verified with `npm run lint` (`tsc --noEmit`) — clean exit code 0.
+5. **Universal Testing Protocol Verification**:
+   - Dev Server: Running on `http://localhost:3000` (and `http://100.100.56.31:3000` over Tailscale).
+   - TypeScript Check: `tsc --noEmit` exited cleanly with code 0.
+   - Production Build: `npm run build` succeeded with code 0 (`✓ built in 8.47s`).
 
 ---
 

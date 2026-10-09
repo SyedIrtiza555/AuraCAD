@@ -164,11 +164,16 @@ export function DesignersTableView({
                             {designer.name.charAt(0)}
                           </span>
                           <div>
-                            <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 transition-colors">
-                              {designer.name}
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-purple-600 transition-colors">
+                                {designer.name}
+                              </span>
+                              <span className="px-1.5 py-0.2 rounded font-mono font-bold text-[10px] bg-purple-500/10 text-purple-600 dark:text-purple-400 border border-purple-400/20">
+                                {designer.code}
+                              </span>
                             </div>
                             <div className="text-[10px] font-mono text-slate-400">
-                              ID: {designer.id}
+                              Code: {designer.code} • ID: {designer.id}
                             </div>
                           </div>
                         </div>

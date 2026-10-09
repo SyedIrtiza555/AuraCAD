@@ -1,5 +1,5 @@
 // src/types.ts
-// Digital Office System Data Types (Strict ER Alignment)
+// Digital Office System Data Types (Strict ER Alignment with Mantine UI & Order Code PK)
 
 export type OrderStatus = 'Pending' | 'Designing' | 'Review' | 'Completed' | 'Cancelled';
 
@@ -9,6 +9,7 @@ export type InvoiceStatus = 'Draft' | 'Sent' | 'Paid' | 'Overdue' | 'Cancelled';
 
 export interface Designer {
   id: string;
+  code: string; // e.g. "FU", "ER", "MA", "AT"
   name: string;
   email: string;
   phone: string;
@@ -18,6 +19,7 @@ export interface Designer {
 
 export interface Prospect {
   id: string;
+  code: string; // e.g. "CA", "VC", "LA", "WH", "CH"
   name: string;
   email: string;
   phone: string;
@@ -61,9 +63,11 @@ export interface OrderStatusHistory {
 }
 
 export interface Order {
-  id: string;
-  order_code: string;
-  name: string;
+  // Order code is the primary key (PK): <DesignerCode>-<ClientCode>-<OrderName>
+  // e.g. "FU-CA-Three stone ring"
+  id: string; // Same as order_code (PK)
+  order_code: string; // <DesignerCode>-<ClientCode>-<OrderName>
+  name: string; // e.g. "Three stone ring"
   status: OrderStatus;
   effort_level: EffortLevel;
   order_value: number;
@@ -101,3 +105,30 @@ export const INVOICE_STATUSES: InvoiceStatus[] = [
   'Overdue',
   'Cancelled'
 ];
+
+/**
+ * Formats a 3-part Order Code PK: <DesignerCode>-<ClientCode>-<OrderName>
+ * e.g. ("FU", "CA", "Three stone ring") => "FU-CA-Three stone ring"
+ */
+export function formatOrderCode(designerCode: string, clientCode: string, orderName: string): string {
+  const dCode = (designerCode || 'DES').trim().toUpperCase();
+  const cCode = (clientCode || 'CLI').trim().toUpperCase();
+  const name = (orderName || 'Bespoke Order').trim();
+  return `${dCode}-${cCode}-${name}`;
+}
+
+/**
+ * Parses a 3-part Order Code PK into its components.
+ */
+export function parseOrderCode(orderCode: string): { designerCode: string; clientCode: string; orderName: string } {
+  if (!orderCode) return { designerCode: '', clientCode: '', orderName: '' };
+  const parts = orderCode.split('-');
+  if (parts.length >= 3) {
+    return {
+      designerCode: parts[0],
+      clientCode: parts[1],
+      orderName: parts.slice(2).join('-')
+    };
+  }
+  return { designerCode: '', clientCode: '', orderName: orderCode };
+}
