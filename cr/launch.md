@@ -2,11 +2,11 @@
 
 ## Active Endpoints Matrix
 
-| Layer (Vertical) | 1. Local (Horizontal) | 2. Tailscale (Horizontal) |
+| Layer (Vertical) | 1. Local (Horizontal) | 2. Tailscale Mobile & Remote (Horizontal) |
 | :--- | :--- | :--- |
-| **1. Frontend** | • [http://localhost:3000](http://localhost:3000) *(Vite Dev Server + HMR)* | • [http://100.100.56.31:3000](http://100.100.56.31:3000) *(Encrypted Mesh)* |
-| **2. Backend** | • **Dashboard (Proxy)**: [http://localhost:3000/_/](http://localhost:3000/_/) *(Recommended)*<br>• **Direct Port**: [http://localhost:8090/_/](http://localhost:8090/_/)<br>• **Root Redirect**: [http://localhost:8090](http://localhost:8090) | • **Dashboard (Proxy)**: [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/) *(Firewall-Free)*<br>• **REST API**: `http://100.100.56.31:8090/api/` |
-| **3. Other** | • **Watcher Telemetry**: [http://localhost:4141](http://localhost:4141) | • **Watcher Telemetry**: [http://100.100.56.31:4141](http://100.100.56.31:4141) |
+| **1. Frontend (Vite Dev)** | • [http://localhost:3000](http://localhost:3000) *(Vite Dev Server + HMR)* | • [http://100.100.56.31:3000](http://100.100.56.31:3000) *(Direct Encrypted Mesh)* |
+| **2. Watcher Bot & Telemetry** | • [http://localhost:4141](http://localhost:4141) *(Reverse Proxy with Error Trap)* | • [http://100.100.56.31:4141](http://100.100.56.31:4141) *(Mobile Testing + Element Quoter)* |
+| **3. Backend (PocketBase)** | • **Dashboard (Proxy)**: [http://localhost:3000/_/](http://localhost:3000/_/) *(Recommended)*<br>• **Direct Port**: [http://localhost:8090/_/](http://localhost:8090/_/) | • **Dashboard (Proxy)**: [http://100.100.56.31:3000/_/](http://100.100.56.31:3000/_/) *(Firewall-Free)*<br>• **REST API**: `http://100.100.56.31:8090/api/` |
 
 ---
 
@@ -25,15 +25,17 @@
 cd C:\Users\TheAuditLabs\Desktop\Projects\AuraCAD
 npm run dev
 ```
-* Binds to `0.0.0.0:3000`.
-* Injected with `<script src="http://localhost:4141/watcher.js" defer></script>` for autonomous error triage.
+* Binds to `0.0.0.0:3000` for both local and Tailscale access.
+* Hot Module Replacement (HMR) active across desktop and mobile browsers.
 
-### 2. Antigravity Watcher Hub Daemon
+### 2. Antigravity Watcher Hub Daemon (Reverse Proxy + Error Trap)
 ```powershell
-node "C:\Users\TheAuditLabs\.gemini\config\scripts\agy-watcher-hub.mjs"
+node "C:\Users\TheAuditLabs\.gemini\config\scripts\agy-watcher-hub.mjs" --proxy 3000
 ```
-* Automatically receives browser errors, WebGL crashes, and element quotes from the desktop UI.
-* Streams incidents directly into `agy-triage.json` and feedback into `agy-feedback.json`.
+* Binds to `0.0.0.0:4141` (`http://localhost:4141` and `http://100.100.56.31:4141`).
+* Automatically proxies Vite traffic while injecting the Universal Watcher Bot HUD.
+* Captures mobile touch exceptions, unhandled Promise rejections, WebGL crashes, and element quoting.
+* Streams triage entries to `agy-triage.json` and feedback to `agy-feedback.json`.
 
 ### 3. Production Build & Preview
 ```powershell
@@ -43,6 +45,13 @@ npm run preview
 
 ---
 
-## Authentication & GitHub Access
-* **GitHub CLI (`gh`)**: Installed and authenticated as `SyedIrtiza555`.
-* **Git Credential Manager**: Integrated with stored Personal Access Token for seamless non-interactive `git pull` / `git push`.
+## Mobile Testing Guide (Tailscale)
+1. Ensure Tailscale is active on your mobile phone connected to the same tailnet.
+2. Open either:
+   - **Direct Vite Link**: `http://100.100.56.31:3000`
+   - **Watcher Bot Proxy Link**: `http://100.100.56.31:4141` (includes on-screen error HUD & feedback tool)
+3. Responsive features active on mobile:
+   - Fixed top luxury navigation bar with hamburger drawer.
+   - Thumb-friendly bottom dock navigation for instant tab switching (Orders, Designers, Clients, Invoices).
+   - Touch-optimized card feeds with direct `tel:` and `mailto:` action buttons.
+   - Full-screen sheet drawers for Order Inspections and New Record creation.

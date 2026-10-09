@@ -10,7 +10,9 @@ import {
   EllipsisVertical,
   CheckCircle2,
   Clock,
-  AlertTriangle
+  AlertTriangle,
+  Building2,
+  ArrowRight
 } from 'lucide-react';
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { Invoice, Order, Prospect, InvoiceStatus, INVOICE_STATUSES } from '../../types';
@@ -143,10 +145,10 @@ export function InvoicesTableView({
   return (
     <div className="w-full flex flex-col gap-4">
       {/* Top Metric Bar */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-3.5 sm:p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
+            <h1 className="text-base sm:text-lg font-bold text-slate-900 dark:text-slate-100 tracking-tight">
               Invoices & Financial Records
             </h1>
             <span className="px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
@@ -159,15 +161,15 @@ export function InvoicesTableView({
         </div>
 
         {/* Global Financial Tally */}
-        <div className="flex items-center gap-4 text-xs font-mono self-end sm:self-auto">
-          <div className="text-right">
-            <span className="text-[10px] text-slate-400 uppercase">Paid Received</span>
+        <div className="flex items-center gap-3 sm:gap-4 text-xs font-mono w-full sm:w-auto justify-between sm:justify-end">
+          <div className="text-left sm:text-right">
+            <span className="text-[10px] text-slate-400 uppercase block">Paid Received</span>
             <div className="font-bold text-emerald-600 dark:text-emerald-400 text-sm">
               ${totalPaid.toLocaleString()}
             </div>
           </div>
-          <div className="text-right border-l border-slate-200 dark:border-slate-800 pl-4">
-            <span className="text-[10px] text-slate-400 uppercase">Total Invoiced</span>
+          <div className="text-left sm:text-right border-l border-slate-200 dark:border-slate-800 pl-3 sm:pl-4">
+            <span className="text-[10px] text-slate-400 uppercase block">Total Invoiced</span>
             <div className="font-bold text-slate-900 dark:text-slate-100 text-sm">
               ${totalBilled.toLocaleString()}
             </div>
@@ -175,19 +177,20 @@ export function InvoicesTableView({
 
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer shadow-xs active:scale-98 ml-2"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer shadow-xs active:scale-98"
           >
             <Download size={13} />
-            <span>Export JSON</span>
+            <span className="hidden sm:inline">Export JSON</span>
+            <span className="sm:hidden">Export</span>
           </button>
         </div>
       </div>
 
-      {/* Table Container */}
+      {/* Table & Cards Container */}
       <div className="rounded-2xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-xs">
         {/* Table Search & Status Filters */}
-        <div className="p-3.5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="relative flex-1 max-w-sm">
+        <div className="p-3 sm:p-3.5 border-b border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="relative flex-1 max-w-full sm:max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
             <input
               type="text"
@@ -201,7 +204,7 @@ export function InvoicesTableView({
             />
           </div>
 
-          <div className="flex items-center gap-1.5 text-xs">
+          <div className="flex items-center gap-1.5 text-xs overflow-x-auto no-scrollbar py-1">
             {(['All', 'Paid', 'Sent', 'Draft', 'Overdue'] as const).map(st => (
               <button
                 key={st}
@@ -209,7 +212,7 @@ export function InvoicesTableView({
                   setStatusFilter(st);
                   setCurrentPage(1);
                 }}
-                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold shrink-0 transition-all cursor-pointer ${
                   statusFilter === st
                     ? 'bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900 shadow-xs'
                     : 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-100'
@@ -221,9 +224,107 @@ export function InvoicesTableView({
           </div>
         </div>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
+        {/* 1. Mobile Adaptive Invoice Cards (< md) */}
+        <div className="p-3 space-y-3 block md:hidden">
+          {paginatedInvoices.length === 0 ? (
+            <div className="p-8 text-center text-slate-400 text-xs">
+              No invoices match the filter criteria.
+            </div>
+          ) : (
+            paginatedInvoices.map((inv) => (
+              <div
+                key={inv.id}
+                className="p-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/90 shadow-xs space-y-2.5"
+              >
+                {/* Top Row: Invoice # & Status */}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-slate-900 dark:text-slate-100">
+                    <FileText size={14} className="text-amber-500 shrink-0" />
+                    <span>{inv.invoice_number}</span>
+                  </div>
+
+                  <div>
+                    {getStatusBadge(inv.status)}
+                  </div>
+                </div>
+
+                {/* Linked Order & Customer */}
+                <div className="pt-1 border-t border-slate-100 dark:border-slate-800/80 space-y-1">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-slate-400">Linked Order:</span>
+                    {inv.linkedOrder ? (
+                      <button
+                        onClick={() => onSelectOrder?.(inv.linkedOrder!)}
+                        className="font-mono text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                      >
+                        {inv.orderCode}
+                      </button>
+                    ) : (
+                      <span className="text-slate-400 italic">None</span>
+                    )}
+                  </div>
+                  <div className="text-xs text-slate-600 dark:text-slate-300 font-semibold truncate">
+                    {inv.orderName}
+                  </div>
+                  <div className="flex items-center gap-1.5 text-xs text-slate-500 dark:text-slate-400">
+                    <Building2 size={11} className="text-slate-400 shrink-0" />
+                    <span className="truncate">{inv.customerName} ({inv.customerCompany})</span>
+                  </div>
+                </div>
+
+                {/* Amount, Due Date & Actions */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80">
+                  <div>
+                    <span className="text-[10px] text-slate-400 uppercase font-mono block">Amount / Due</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-mono text-sm font-extrabold text-slate-900 dark:text-slate-100">
+                        ${inv.amount.toLocaleString()}
+                      </span>
+                      <span className="text-[11px] font-mono text-slate-400">
+                        Due: {inv.due_date || 'Net 14'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                      <button 
+                        className="px-2.5 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 text-xs flex items-center gap-1 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
+                      >
+                        <span>Change Status</span>
+                        <EllipsisVertical size={12} />
+                      </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                      <DropdownMenu.Content 
+                        className="min-w-36 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-1 shadow-xl text-xs z-50 animate-in fade-in-50"
+                        sideOffset={5}
+                      >
+                        <DropdownMenu.Label className="px-2 py-1 text-[10px] font-mono uppercase tracking-wider text-slate-400">
+                          Mark Invoice Status
+                        </DropdownMenu.Label>
+                        {INVOICE_STATUSES.map((st) => (
+                          <DropdownMenu.Item
+                            key={st}
+                            onClick={() => onUpdateInvoiceStatus(inv.id, st)}
+                            className="flex items-center justify-between px-2 py-1.5 rounded-lg text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer outline-none"
+                          >
+                            <span>{st}</span>
+                            {inv.status === st && <Check size={12} className="text-emerald-600" />}
+                          </DropdownMenu.Item>
+                        ))}
+                      </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                  </DropdownMenu.Root>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        {/* 2. Desktop Full Table (>= md) */}
+        <div className="overflow-x-auto hidden md:block">
+          <table className="w-full min-w-[750px] text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-slate-200/80 dark:border-slate-800 bg-slate-50/80 dark:bg-slate-900/80 text-slate-500 font-medium">
                 <th className="p-3.5 font-semibold text-slate-700 dark:text-slate-300">Invoice Number</th>
@@ -342,7 +443,7 @@ export function InvoicesTableView({
         </div>
 
         {/* Footer */}
-        <div className="p-3.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40 dark:bg-slate-900/40">
+        <div className="p-3 sm:p-3.5 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 bg-slate-50/40 dark:bg-slate-900/40">
           <div>
             Page <span className="font-semibold text-slate-800 dark:text-slate-200">{currentPage}</span> of{' '}
             <span className="font-semibold text-slate-800 dark:text-slate-200">{totalPages}</span>

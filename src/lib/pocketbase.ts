@@ -13,17 +13,6 @@ export interface PBUser {
   created?: string;
 }
 
-export interface PBCallLog {
-  id?: string;
-  contact_name: string;
-  phone: string;
-  agent_name: string;
-  status: 'Completed' | 'Scheduled' | 'Missed' | 'Voicemail' | 'Busy';
-  duration_seconds: number;
-  outcome: 'Qualified' | 'Follow-up Needed' | 'Not Interested' | 'Bespoke Quote Sent' | 'Deposit Taken';
-  notes: string;
-  call_time: string;
-}
 
 // Auto-detect PocketBase URL: uses same-origin Vite proxy for zero-firewall & zero-CORS resilience
 export const getPocketBaseUrl = (): string => {
@@ -228,40 +217,4 @@ export async function checkServerHealth(): Promise<{ online: boolean; latencyMs:
   }
 }
 
-/**
- * Powerdialler Call Logs: Fetch recent calls
- */
-export async function fetchCallLogs(): Promise<PBCallLog[]> {
-  try {
-    const records = await pb.collection('call_logs').getList(1, 50, {
-      sort: '-created',
-    });
-    return records.items.map((r: any) => ({
-      id: r.id,
-      contact_name: r.contact_name,
-      phone: r.phone,
-      agent_name: r.agent_name,
-      status: r.status,
-      duration_seconds: r.duration_seconds || 0,
-      outcome: r.outcome,
-      notes: r.notes,
-      call_time: r.call_time || r.created,
-    }));
-  } catch (err) {
-    console.warn('[PocketBase] fetchCallLogs error:', err);
-    return [];
-  }
-}
 
-/**
- * Powerdialler Call Logs: Record a new call outcome
- */
-export async function recordCallLog(call: PBCallLog): Promise<boolean> {
-  try {
-    await pb.collection('call_logs').create(call);
-    return true;
-  } catch (err) {
-    console.error('[PocketBase] recordCallLog error:', err);
-    return false;
-  }
-}

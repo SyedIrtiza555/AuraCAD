@@ -23,6 +23,7 @@ import {
   ShoppingBag,
   Info
 } from 'lucide-react';
+import { useMediaQuery } from '@mantine/hooks';
 import { 
   Designer, 
   Prospect, 
@@ -58,6 +59,7 @@ export function NewOrderModal({
   onClose,
   onSubmit
 }: NewOrderModalProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [name, setName] = useState('Three stone ring');
   const [orderValue, setOrderValue] = useState<number>(9400);
   const [status, setStatus] = useState<OrderStatus>('Designing');
@@ -108,7 +110,8 @@ export function NewOrderModal({
         </Group>
       }
       radius="lg"
-      size="lg"
+      fullScreen={isMobile}
+      size={isMobile ? '100%' : 'lg'}
       overlayProps={{ backgroundOpacity: 0.4, blur: 3 }}
     >
       <form onSubmit={handleSubmit}>

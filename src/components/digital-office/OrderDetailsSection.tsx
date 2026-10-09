@@ -77,6 +77,8 @@ interface OrderDetailsSectionProps {
   onUpdateDesigner: (orderId: string, designerId: string) => void;
   onUpdateInvoiceStatus: (invoiceId: string, status: InvoiceStatus) => void;
   onAddCorrection: (orderId: string, message: string, authorName: string, imageUrl?: string) => void;
+  hideFinancials?: boolean;
+  hideClientContact?: boolean;
 }
 
 export function OrderDetailsSection({
@@ -90,7 +92,9 @@ export function OrderDetailsSection({
   onUpdateStatus,
   onUpdateDesigner,
   onUpdateInvoiceStatus,
-  onAddCorrection
+  onAddCorrection,
+  hideFinancials = false,
+  hideClientContact = false
 }: OrderDetailsSectionProps) {
   if (!order) {
     return (
@@ -199,8 +203,8 @@ export function OrderDetailsSection({
       <Stack gap="md">
         
         {/* Top Header & PK Anatomy */}
-        <Group justify="space-between" align="flex-start" wrap="nowrap">
-          <Box style={{ flex: 1 }}>
+        <div className="flex flex-col sm:flex-row items-start justify-between gap-3">
+          <Box style={{ flex: 1, minWidth: 0, width: '100%' }}>
             
             {/* 3-Part Order Code PK Pills */}
             <Group gap="xs" mb="xs" wrap="wrap">
@@ -232,8 +236,8 @@ export function OrderDetailsSection({
             </Group>
 
             {/* Main Order Title & Full PK Key */}
-            <Group gap="xs" align="center">
-              <Title order={3} className="text-slate-900 dark:text-slate-100">
+            <div className="flex items-center gap-2 flex-wrap">
+              <Title order={3} className="text-slate-900 dark:text-slate-100 text-lg sm:text-xl break-words">
                 {order.name}
               </Title>
               
@@ -252,18 +256,20 @@ export function OrderDetailsSection({
                   </Tooltip>
                 )}
               </CopyButton>
-            </Group>
+            </div>
 
-            <Text size="xs" c="dimmed" ff="monospace" mt={2}>
+            <Text size="xs" c="dimmed" ff="monospace" mt={2} className="break-all">
               Primary Key: <span className="font-bold text-slate-800 dark:text-slate-200">{order.order_code}</span> • Created {new Date(order.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
             </Text>
           </Box>
 
-          <Group gap="xs" align="center">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end shrink-0">
             <Paper p="xs" px="md" radius="md" withBorder className="bg-slate-50 dark:bg-slate-800/80">
-              <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Order Value</Text>
-              <Text size="lg" fw={800} ff="monospace" c="brandCyan.5">
-                ${order.order_value.toLocaleString()}
+              <Text size="xs" c="dimmed" tt="uppercase" fw={700}>
+                {hideFinancials ? 'Order Type' : 'Order Value'}
+              </Text>
+              <Text size={hideFinancials ? "sm" : "lg"} fw={800} ff="monospace" c="brandCyan.5">
+                {hideFinancials ? 'Bespoke CAD Mount' : `$${order.order_value.toLocaleString()}`}
               </Text>
             </Paper>
 
@@ -279,12 +285,12 @@ export function OrderDetailsSection({
                 <X size={18} />
               </ActionIcon>
             )}
-          </Group>
-        </Group>
+          </div>
+        </div>
 
         {/* Interactive Status Flow Stepper */}
-        <Paper p="xs" radius="md" withBorder className="bg-slate-50/60 dark:bg-slate-800/40">
-          <Group justify="space-between" gap="xs" wrap="nowrap">
+        <Paper p="xs" radius="md" withBorder className="bg-slate-50/60 dark:bg-slate-800/40 overflow-x-auto no-scrollbar">
+          <div className="flex items-center gap-1.5 min-w-[340px] sm:min-w-0 w-full justify-between">
             {(['Pending', 'Designing', 'Review', 'Completed'] as OrderStatus[]).map((st, idx, arr) => {
               const isActive = order.status === st;
               return (
@@ -296,7 +302,7 @@ export function OrderDetailsSection({
                     color={isActive ? getStatusColor(st) : 'gray'}
                     onClick={() => onUpdateStatus(order.id, st)}
                     leftSection={isActive ? <CheckCircle2 size={12} /> : undefined}
-                    style={{ flex: 1 }}
+                    className="flex-1 text-[11px] sm:text-xs px-2"
                   >
                     {st}
                   </Button>
@@ -306,7 +312,7 @@ export function OrderDetailsSection({
                 </React.Fragment>
               );
             })}
-          </Group>
+          </div>
         </Paper>
 
         {/* 3 Relational Summary Cards: Designer (1:N), Client (1:N), Invoice (1:1) */}
@@ -382,10 +388,10 @@ export function OrderDetailsSection({
                   {prospect.company}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  {prospect.email}
+                  {hideClientContact ? 'Confidential (Admin/Agent Only)' : prospect.email}
                 </Text>
                 <Text size="xs" c="dimmed">
-                  {prospect.phone}
+                  {hideClientContact ? 'Direct VIP Client' : prospect.phone}
                 </Text>
                 <Badge variant="outline" color="teal" size="xs" mt="xs">
                   VIP Direct Bespoke Client
@@ -420,19 +426,21 @@ export function OrderDetailsSection({
                 <Text size="xs" c="dimmed">
                   Due: {invoice.due_date || 'Net 14 Days'}
                 </Text>
-                <Text size="sm" fw={800} ff="monospace" c="blue">
-                  ${invoice.amount.toLocaleString()}
+                <Text size="sm" fw={800} ff="monospace" c={hideFinancials ? "dimmed" : "blue"}>
+                  {hideFinancials ? 'Confidential (Studio Billing)' : `$${invoice.amount.toLocaleString()}`}
                 </Text>
 
-                <Box mt="xs">
-                  <Select
-                    size="xs"
-                    label="Payment Status"
-                    value={invoice.status}
-                    onChange={(val) => val && onUpdateInvoiceStatus(invoice.id, val as InvoiceStatus)}
-                    data={INVOICE_STATUSES.map(st => ({ value: st, label: st }))}
-                  />
-                </Box>
+                {!hideFinancials && (
+                  <Box mt="xs">
+                    <Select
+                      size="xs"
+                      label="Payment Status"
+                      value={invoice.status}
+                      onChange={(val) => val && onUpdateInvoiceStatus(invoice.id, val as InvoiceStatus)}
+                      data={INVOICE_STATUSES.map(st => ({ value: st, label: st }))}
+                    />
+                  </Box>
+                )}
               </Stack>
             ) : (
               <Text size="xs" c="dimmed" fs="italic">No invoice record found.</Text>
@@ -442,7 +450,7 @@ export function OrderDetailsSection({
 
         {/* Detailed Sections Tabs: (1) Status History Timeline, (2) Corrections & Feedback */}
         <Tabs defaultValue="history" radius="md">
-          <Tabs.List>
+          <Tabs.List className="flex overflow-x-auto no-scrollbar flex-nowrap">
             <Tabs.Tab 
               value="history" 
               leftSection={<Clock size={13} />}

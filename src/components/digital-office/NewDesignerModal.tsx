@@ -1,6 +1,6 @@
-// src/components/digital-office/NewDesignerModal.tsx
 import React, { useState } from 'react';
 import { Modal, TextInput, Button, Group, Stack, Text, Grid } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { User, Sparkles } from 'lucide-react';
 
 interface NewDesignerModalProps {
@@ -16,6 +16,7 @@ interface NewDesignerModalProps {
 }
 
 export function NewDesignerModal({ isOpen, onClose, onSubmit }: NewDesignerModalProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [email, setEmail] = useState('');
@@ -61,7 +62,8 @@ export function NewDesignerModal({ isOpen, onClose, onSubmit }: NewDesignerModal
         </Group>
       }
       radius="lg"
-      size="md"
+      fullScreen={isMobile}
+      size={isMobile ? '100%' : 'md'}
       overlayProps={{ backgroundOpacity: 0.4, blur: 3 }}
     >
       <form onSubmit={handleSubmit}>

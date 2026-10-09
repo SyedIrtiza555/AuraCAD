@@ -1,7 +1,7 @@
 # AuraCAD — Technical Architecture & Build Specification
 
 ## System Overview & Target
-- **Target OS**: Desktop only (Windows 11 / x64)
+- **Target OS**: Responsive Cross-Platform (Desktop Windows 11 + Mobile iOS/Android via Tailscale mesh)
 - **Application Category**: Digital Office System & Bespoke Jewelry Order Engine
 - **UI Architecture**: Mantine UI (`@mantine/core` v7+, `@mantine/hooks`) + Creative Tim design block systems + Tailwind CSS v4
 - **Persistence**: Dexie.js v4 IndexedDB (`AuraCAD_DigitalOffice_v2`) + PocketBase SQLite sync
@@ -13,7 +13,7 @@
 | Dependency | Version | Purpose & Rationale |
 | :--- | :--- | :--- |
 | `@mantine/core` | `^7.17.6` | Accessible, robust React components (Cards, Badges, Timeline, Drawers, Modals, Forms, Grid) |
-| `@mantine/hooks` | `^7.17.6` | Reactive viewport, disclosure, and clipboard hooks |
+| `@mantine/hooks` | `^7.17.6` | Reactive viewport (`useMediaQuery`), disclosure, and clipboard hooks |
 | `react` / `react-dom` | `^19.0.1` | Modern concurrent rendering and component composition |
 | `vite` | `^6.2.3` | Instant HMR (<500ms), lightning-fast ES module bundler |
 | `tailwindcss` / `@tailwindcss/vite` | `^4.1.14` | High-performance CSS engine with atomic utility tokens and native glassmorphism styling |
@@ -21,6 +21,28 @@
 | `pocketbase` | `^0.28.1` | High-performance Go/SQLite backend with real-time subscriptions, auth, and role management |
 | `lucide-react` | `^0.546.0` | Clean vector iconography aligned with luxury jewelry and digital office metaphors |
 | `uuid` | `^14.0.1` | Collision-free entity IDs for invoices and corrections |
+
+---
+
+## Responsive & Mobile Architecture
+
+### 1. Viewport & Touch Optimization
+- Configured in `index.html`:
+  `width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover`
+- Dark luxury theme color `#050608` for native browser status bar integration.
+- Safe-area inset handling (`pb-[env(safe-area-inset-bottom)]`) to prevent home bar collision on iPhone / modern Android devices.
+
+### 2. Dual-Mode UI Paradigm
+| UI Component | Desktop Layout (`md:block` / `md:flex`) | Mobile Layout (`md:hidden`) |
+| :--- | :--- | :--- |
+| **Top Navigation** | Full horizontal banner with status badges, role badge, action pills | Compact sticky header with hamburger drawer trigger |
+| **Bottom Navigation** | Hidden | Floating thumb-dock with 4 core tabs and active count indicators |
+| **Orders Table** | Multi-column table with hover effects, effort badges, financial values | Touch-friendly card feed with quick action pills and 1-tap inspector |
+| **Designers Directory**| 6-column tabular layout with inline stats | Card view with direct tap-to-call (`tel:`) and tap-to-email (`mailto:`) |
+| **Clients (Prospects)**| Full CRM ledger with company details & pipeline spend | Compact portfolio cards with quick "+ Order" shortcut |
+| **Invoices Ledger** | Dense financial table with status select | Billing summary cards with order code linkage |
+| **Drawers & Modals** | Side flyout (`size="xl"`, 600px width) | Full-screen adaptive sheet (`size="100%"`, `fullScreen={true}`) |
+| **Status Steppers** | Linear step row | Horizontally scrollable overflow bar with no scrollbar |
 
 ---
 
@@ -87,7 +109,7 @@ erDiagram
     CORRECTIONS {
         string id PK
         string order_id FK "Order Code PK"
-        text message
+        string message
         date created_at
     }
 
@@ -100,25 +122,14 @@ erDiagram
     ORDER_STATUS_HISTORY {
         string id PK
         string order_id FK "Order Code PK"
-        string status
-        datetime start_date
-        datetime end_date
+        enum from_status
+        enum to_status
+        datetime changed_at
     }
 
-    DESIGNERS ||--o{ ORDERS : "handles"
-    PROSPECTS ||--o{ ORDERS : "requests"
-    ORDERS ||--|| INVOICES : "has (1:1)"
-    ORDERS ||--o{ CORRECTIONS : "gets"
-    CORRECTIONS ||--o{ CORRECTION_ATTACHMENTS : "contains"
-    ORDERS ||--o{ ORDER_STATUS_HISTORY : "tracks"
+    ORDERS ||--o{ INVOICES : "1:1 Billing"
+    ORDERS ||--o{ CORRECTIONS : "1:N Change Requests"
+    ORDERS ||--o{ ORDER_STATUS_HISTORY : "1:N Stage Timeline"
+    DESIGNERS ||--o{ ORDERS : "1:N Assigned Work"
+    PROSPECTS ||--o{ ORDERS : "1:N Client Orders"
 ```
-
----
-
-## Bundle Metrics & Performance
-
-- **Production Build Time**: `8.47 seconds` (Vite 6 / Rollup)
-- **HTML Footprint**: `1.16 kB` (gzip: `0.58 kB`)
-- **Stylesheet Footprint**: `334.24 kB` (gzip: `48.18 kB`, includes Mantine CSS variables)
-- **JavaScript Bundle**: `782.51 kB` (gzip: `233.04 kB`)
-- **Cold Boot Time**: `< 500 ms`

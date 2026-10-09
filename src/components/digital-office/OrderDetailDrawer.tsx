@@ -1,6 +1,7 @@
 // src/components/digital-office/OrderDetailDrawer.tsx
 import React from 'react';
 import { Drawer, Text, Group, Badge } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { OrderDetailsSection } from './OrderDetailsSection';
 import { 
   Order, 
@@ -26,6 +27,8 @@ interface OrderDetailDrawerProps {
   onUpdateDesigner: (orderId: string, designerId: string) => void;
   onUpdateInvoiceStatus: (invoiceId: string, status: InvoiceStatus) => void;
   onAddCorrection: (orderId: string, message: string, authorName: string, imageUrl?: string) => void;
+  hideFinancials?: boolean;
+  hideClientContact?: boolean;
 }
 
 export function OrderDetailDrawer({
@@ -39,8 +42,11 @@ export function OrderDetailDrawer({
   onUpdateStatus,
   onUpdateDesigner,
   onUpdateInvoiceStatus,
-  onAddCorrection
+  onAddCorrection,
+  hideFinancials = false,
+  hideClientContact = false
 }: OrderDetailDrawerProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   if (!order) return null;
 
   const parsed = parseOrderCode(order.order_code);
@@ -49,8 +55,8 @@ export function OrderDetailDrawer({
     <Drawer
       opened={!!order}
       onClose={onClose}
-      position="right"
-      size="xl"
+      position={isMobile ? 'bottom' : 'right'}
+      size={isMobile ? '100%' : 'xl'}
       title={
         <Group gap="xs">
           <Badge variant="filled" color="blue" size="sm" radius="sm">
@@ -61,11 +67,14 @@ export function OrderDetailDrawer({
           </Text>
         </Group>
       }
-      padding="md"
-      overlayProps={{ backgroundOpacity: 0.35, blur: 3 }}
+      padding={isMobile ? 'sm' : 'md'}
+      overlayProps={{ backgroundOpacity: 0.45, blur: 3 }}
       styles={{
         body: {
-          paddingBottom: '2rem'
+          paddingBottom: '2.5rem'
+        },
+        header: {
+          borderBottom: '1px solid rgba(226, 232, 240, 0.1)'
         }
       }}
     >
@@ -81,6 +90,8 @@ export function OrderDetailDrawer({
         onUpdateDesigner={onUpdateDesigner}
         onUpdateInvoiceStatus={onUpdateInvoiceStatus}
         onAddCorrection={onAddCorrection}
+        hideFinancials={hideFinancials}
+        hideClientContact={hideClientContact}
       />
     </Drawer>
   );

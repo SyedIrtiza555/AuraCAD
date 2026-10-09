@@ -1,6 +1,6 @@
-// src/components/digital-office/NewProspectModal.tsx
 import React, { useState } from 'react';
 import { Modal, TextInput, Button, Group, Stack, Text, Grid } from '@mantine/core';
+import { useMediaQuery } from '@mantine/hooks';
 import { Building2 } from 'lucide-react';
 
 interface NewProspectModalProps {
@@ -16,6 +16,7 @@ interface NewProspectModalProps {
 }
 
 export function NewProspectModal({ isOpen, onClose, onSubmit }: NewProspectModalProps) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
   const [company, setCompany] = useState('');
@@ -61,7 +62,8 @@ export function NewProspectModal({ isOpen, onClose, onSubmit }: NewProspectModal
         </Group>
       }
       radius="lg"
-      size="md"
+      fullScreen={isMobile}
+      size={isMobile ? '100%' : 'md'}
       overlayProps={{ backgroundOpacity: 0.4, blur: 3 }}
     >
       <form onSubmit={handleSubmit}>
