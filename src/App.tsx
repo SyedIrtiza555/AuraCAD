@@ -1,6 +1,7 @@
 // src/App.tsx
 import React, { useState, useEffect, useMemo } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useMantineColorScheme, ActionIcon, Tooltip } from '@mantine/core';
 import { 
   db, 
   initializeDatabase, 
@@ -61,18 +62,18 @@ import {
   PanelLeftClose, 
   PanelLeftOpen,
   Sparkles,
-  ExternalLink,
   ChevronRight,
-  Database,
   RefreshCw,
-  Search,
-  CheckCircle2,
-  Clock,
-  Layers,
-  Eye
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function App() {
+  // Theme Color Scheme (Dark / Light with LocalStorage Persistence)
+  const { colorScheme, setColorScheme } = useMantineColorScheme();
+  const isDark = colorScheme === 'dark';
+  const toggleColorScheme = () => setColorScheme(isDark ? 'light' : 'dark');
+
   // 1. Initialize Dexie IndexedDB
   useEffect(() => {
     initializeDatabase();
@@ -119,7 +120,7 @@ export default function App() {
   const [activeRoleView, setActiveRoleView] = useState<'all' | 'admin' | 'designer' | 'agent' | 'superagent'>('all');
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
 
-  // 3. Navigation & Modules (Orders | Designers | Prospects | Invoices | Order Details)
+  // 3. Navigation & Modules (Orders | Designers | Prospects | Invoices)
   const [currentModule, setCurrentModule] = useState<'orders' | 'designers' | 'prospects' | 'invoices'>('orders');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
@@ -245,39 +246,40 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans select-none">
-      {/* Left Navigation Rail */}
+    <div className="flex h-screen w-screen overflow-hidden bg-[#f8fafc] dark:bg-[#07080b] text-slate-900 dark:text-[#d5d7e0] font-sans select-none">
+      
+      {/* Left Navigation Rail (30% Structural Surface) */}
       <aside 
         className={`${
           isSidebarOpen ? 'w-60' : 'w-16'
-        } border-r border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl flex flex-col h-full shrink-0 transition-all duration-200 z-30`}
+        } border-r border-slate-200 dark:border-[#1a1d28] bg-white/95 dark:bg-[#0a0b10]/95 backdrop-blur-2xl flex flex-col h-full shrink-0 transition-all duration-200 z-30`}
       >
-        {/* Rail Top Header */}
-        <div className="h-14 px-3 flex items-center justify-between border-b border-slate-200/80 dark:border-slate-800">
+        {/* Rail Top Header with 10% Brand Accents */}
+        <div className="h-14 px-3 flex items-center justify-between border-b border-slate-200 dark:border-[#1a1d28]">
           {isSidebarOpen ? (
             <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/15 via-[#ff943c]/15 to-purple-500/15 border border-amber-300/60 dark:border-amber-500/40 backdrop-blur-xl shadow-xs">
-                <span className="w-2 h-2 rounded-full bg-[#ff943c] shadow-[0_0_8px_rgba(255,148,60,0.9)] animate-pulse" />
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-gradient-to-r from-[#29aae0]/15 via-[#83dd24]/15 to-[#ec1e25]/15 border border-[#29aae0]/30 backdrop-blur-xl shadow-xs">
+                <span className="w-2 h-2 rounded-full bg-[#29aae0] shadow-[0_0_8px_rgba(41,170,224,0.9)] animate-pulse" />
                 <span className="text-xs font-bold tracking-tight text-slate-900 dark:text-slate-100 font-mono">AuraCAD</span>
-                <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#ff943c] text-black">v0-b</span>
+                <span className="text-[9px] font-mono font-extrabold px-1.5 py-0.2 rounded-full bg-[#29aae0] text-black">v0-b</span>
               </div>
             </div>
           ) : (
             <div className="w-full flex justify-center">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#ff943c] shadow-[0_0_8px_rgba(255,148,60,0.9)]" />
+              <span className="w-2.5 h-2.5 rounded-full bg-[#29aae0] shadow-[0_0_8px_rgba(41,170,224,0.9)]" />
             </div>
           )}
 
           <button 
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+            className="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-[#12141c] transition-colors cursor-pointer"
             title={isSidebarOpen ? "Collapse Navigation Rail" : "Expand Navigation Rail"}
           >
             {isSidebarOpen ? <PanelLeftClose size={14} /> : <PanelLeftOpen size={14} />}
           </button>
         </div>
 
-        {/* Primary Action Button */}
+        {/* Primary Action Button (10% Brand Cyan Accent) */}
         {isSidebarOpen && (
           <div className="p-3 pb-1">
             <button 
@@ -285,7 +287,7 @@ export default function App() {
                 setPreselectedProspect(null);
                 setIsNewOrderOpen(true);
               }}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer active:scale-98"
+              className="w-full bg-[#29aae0] hover:bg-[#1f8ec0] text-white py-2 px-3 rounded-xl font-semibold text-xs flex items-center justify-center gap-1.5 transition-all shadow-[0_0_12px_rgba(41,170,224,0.35)] cursor-pointer active:scale-98"
             >
               <Plus size={13} strokeWidth={2.5} />
               <span>New Bespoke Order</span>
@@ -293,7 +295,7 @@ export default function App() {
           </div>
         )}
 
-        {/* Digital Office Navigation Tabs (Strictly ER Aligned) */}
+        {/* Digital Office Navigation Tabs */}
         <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
           {/* 1. Orders */}
           <button
@@ -303,16 +305,16 @@ export default function App() {
             }}
             className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               currentModule === 'orders'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-[#29aae0] text-white shadow-[0_0_10px_rgba(41,170,224,0.3)]'
+                : 'text-slate-600 dark:text-[#8c8fa3] hover:bg-slate-100 dark:hover:bg-[#12141c] hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <ShoppingBag size={15} className={currentModule === 'orders' ? 'text-white' : 'text-blue-500'} />
+            <ShoppingBag size={15} className={currentModule === 'orders' ? 'text-white' : 'text-[#29aae0]'} />
             {isSidebarOpen && (
               <div className="flex-1 flex items-center justify-between text-left">
                 <span>Studio Orders</span>
                 <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                  currentModule === 'orders' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  currentModule === 'orders' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-[#12141c] text-slate-500 dark:text-[#8c8fa3]'
                 }`}>
                   {orders.length}
                 </span>
@@ -326,15 +328,15 @@ export default function App() {
             className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               currentModule === 'designers'
                 ? 'bg-purple-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                : 'text-slate-600 dark:text-[#8c8fa3] hover:bg-slate-100 dark:hover:bg-[#12141c] hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <Users size={15} className={currentModule === 'designers' ? 'text-white' : 'text-purple-500'} />
+            <Users size={15} className={currentModule === 'designers' ? 'text-white' : 'text-purple-400'} />
             {isSidebarOpen && (
               <div className="flex-1 flex items-center justify-between text-left">
                 <span>CAD Designers</span>
                 <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                  currentModule === 'designers' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  currentModule === 'designers' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-[#12141c] text-slate-500 dark:text-[#8c8fa3]'
                 }`}>
                   {designers.length}
                 </span>
@@ -347,16 +349,16 @@ export default function App() {
             onClick={() => setCurrentModule('prospects')}
             className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               currentModule === 'prospects'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                ? 'bg-[#83dd24] text-[#050608] shadow-[0_0_10px_rgba(131,221,36,0.3)] font-bold'
+                : 'text-slate-600 dark:text-[#8c8fa3] hover:bg-slate-100 dark:hover:bg-[#12141c] hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
-            <Building2 size={15} className={currentModule === 'prospects' ? 'text-white' : 'text-emerald-500'} />
+            <Building2 size={15} className={currentModule === 'prospects' ? 'text-[#050608]' : 'text-[#83dd24]'} />
             {isSidebarOpen && (
               <div className="flex-1 flex items-center justify-between text-left">
                 <span>Clients & Prospects</span>
                 <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                  currentModule === 'prospects' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  currentModule === 'prospects' ? 'bg-black/15 text-black' : 'bg-slate-100 dark:bg-[#12141c] text-slate-500 dark:text-[#8c8fa3]'
                 }`}>
                   {prospects.length}
                 </span>
@@ -370,7 +372,7 @@ export default function App() {
             className={`w-full flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
               currentModule === 'invoices'
                 ? 'bg-amber-600 text-white shadow-xs'
-                : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800/60 hover:text-slate-900 dark:hover:text-slate-100'
+                : 'text-slate-600 dark:text-[#8c8fa3] hover:bg-slate-100 dark:hover:bg-[#12141c] hover:text-slate-900 dark:hover:text-slate-100'
             }`}
           >
             <Receipt size={15} className={currentModule === 'invoices' ? 'text-white' : 'text-amber-500'} />
@@ -378,7 +380,7 @@ export default function App() {
               <div className="flex-1 flex items-center justify-between text-left">
                 <span>Invoices & Billing</span>
                 <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full font-bold ${
-                  currentModule === 'invoices' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                  currentModule === 'invoices' ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-[#12141c] text-slate-500 dark:text-[#8c8fa3]'
                 }`}>
                   {invoices.length}
                 </span>
@@ -388,15 +390,15 @@ export default function App() {
         </nav>
 
         {/* Rail Bottom Info & Staff Switcher */}
-        <div className="p-3 border-t border-slate-200/80 dark:border-slate-800 space-y-2">
+        <div className="p-3 border-t border-slate-200 dark:border-[#1a1d28] space-y-2">
           {/* Active Role Pill */}
           <button
             onClick={() => setIsRoleManagerOpen(true)}
-            className="w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-800/60 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700/80 flex items-center justify-between transition-colors cursor-pointer text-left"
+            className="w-full p-2 rounded-xl bg-slate-50 dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1a1d28] border border-slate-200 dark:border-[#262938] flex items-center justify-between transition-colors cursor-pointer text-left"
             title="Click to Switch User Role in PocketBase"
           >
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
                 {currentUser?.role === 'owner' ? <Crown size={13} /> : <Shield size={13} />}
               </div>
               {isSidebarOpen && (
@@ -417,7 +419,7 @@ export default function App() {
           {isSidebarOpen && (
             <button
               onClick={handleResetDatabase}
-              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 text-[10px] font-mono text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 py-1.5 px-2 text-[10px] font-mono text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#12141c] rounded-lg transition-colors cursor-pointer"
               title="Reseed IndexedDB with default sample records"
             >
               <RefreshCw size={11} />
@@ -427,11 +429,11 @@ export default function App() {
         </div>
       </aside>
 
-      {/* Main Workspace Area */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-slate-950">
+      {/* Main Workspace Area (60% Dominant Base Canvas) */}
+      <main className="flex-1 flex flex-col h-full overflow-hidden bg-[#f8fafc] dark:bg-[#07080b]">
         
         {/* Top Navbar */}
-        <header className="h-14 px-6 border-b border-slate-200/80 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md flex items-center justify-between shrink-0 z-20">
+        <header className="h-14 px-6 border-b border-slate-200 dark:border-[#1a1d28] bg-white/80 dark:bg-[#0a0b10]/90 backdrop-blur-md flex items-center justify-between shrink-0 z-20">
           <div className="flex items-center gap-3">
             <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider font-mono">
               Digital Office
@@ -448,13 +450,13 @@ export default function App() {
           <div className="flex items-center gap-3">
             {/* View Mode Switcher when in Orders Module */}
             {currentModule === 'orders' && selectedOrder && (
-              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs">
+              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#12141c] border border-slate-200 dark:border-[#262938] text-xs">
                 <button
                   onClick={() => setOrderViewMode('table')}
                   className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     orderViewMode === 'table'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      ? 'bg-white dark:bg-[#1a1d28] text-[#29aae0] shadow-xs'
+                      : 'text-slate-600 dark:text-[#8c8fa3] hover:text-slate-900'
                   }`}
                 >
                   Table View
@@ -463,8 +465,8 @@ export default function App() {
                   onClick={() => setOrderViewMode('details')}
                   className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
                     orderViewMode === 'details'
-                      ? 'bg-white dark:bg-slate-900 text-blue-600 shadow-xs'
-                      : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
+                      ? 'bg-white dark:bg-[#1a1d28] text-[#29aae0] shadow-xs'
+                      : 'text-slate-600 dark:text-[#8c8fa3] hover:text-slate-900'
                   }`}
                 >
                   Details Section
@@ -472,15 +474,29 @@ export default function App() {
               </div>
             )}
 
-            {/* PocketBase Live Indicator */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-mono">
+            {/* PocketBase Live Indicator (10% Brand Lime Accent) */}
+            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-[#12141c] border border-slate-200 dark:border-[#262938] text-xs font-mono">
               <span className={`w-2 h-2 rounded-full ${
-                serverHealth.online ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]' : 'bg-slate-400'
+                serverHealth.online ? 'bg-[#83dd24] shadow-[0_0_8px_rgba(131,221,36,0.9)] animate-pulse' : 'bg-slate-400'
               }`} />
-              <span className="text-[11px] text-slate-600 dark:text-slate-400">
+              <span className="text-[11px] text-slate-600 dark:text-[#8c8fa3]">
                 {serverHealth.online ? `PocketBase ${serverHealth.latencyMs}ms` : 'Local IndexedDB Active'}
               </span>
             </div>
+
+            {/* Dark / Light Theme Toggle (Mantine Integrated) */}
+            <Tooltip label={isDark ? "Switch to Light Mode" : "Switch to Dark Mode"}>
+              <ActionIcon
+                variant="default"
+                size="md"
+                radius="md"
+                onClick={toggleColorScheme}
+                aria-label="Toggle theme color scheme"
+                className="border-slate-200 dark:border-[#262938] bg-white dark:bg-[#12141c]"
+              >
+                {isDark ? <Sun size={14} className="text-amber-400" /> : <Moon size={14} className="text-[#29aae0]" />}
+              </ActionIcon>
+            </Tooltip>
 
             {/* Quick Action Button based on active view */}
             {currentModule === 'orders' && (
@@ -489,7 +505,7 @@ export default function App() {
                   setPreselectedProspect(null);
                   setIsNewOrderOpen(true);
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white transition-all shadow-xs cursor-pointer active:scale-98"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-[#29aae0] hover:bg-[#1f8ec0] text-white transition-all shadow-[0_0_10px_rgba(41,170,224,0.3)] cursor-pointer active:scale-98"
               >
                 <Plus size={13} strokeWidth={2.5} />
                 <span>New Order</span>
@@ -509,7 +525,7 @@ export default function App() {
             {currentModule === 'prospects' && (
               <button
                 onClick={() => setIsNewProspectOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white transition-all shadow-xs cursor-pointer active:scale-98"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-[#83dd24] hover:bg-[#6ebc1c] text-[#050608] transition-all shadow-[0_0_10px_rgba(131,221,36,0.3)] cursor-pointer active:scale-98"
               >
                 <Plus size={13} strokeWidth={2.5} />
                 <span>Add Prospect</span>
@@ -525,7 +541,7 @@ export default function App() {
               <div className="max-w-5xl mx-auto space-y-4">
                 <button
                   onClick={() => setOrderViewMode('table')}
-                  className="text-xs text-blue-600 hover:underline flex items-center gap-1 cursor-pointer font-semibold mb-2"
+                  className="text-xs text-[#29aae0] hover:underline flex items-center gap-1 cursor-pointer font-semibold mb-2"
                 >
                   ← Back to Orders Table
                 </button>
@@ -548,7 +564,6 @@ export default function App() {
                 orders={orders}
                 onSelectOrder={(ord) => {
                   handleSelectOrder(ord);
-                  // In addition to drawer, user can toggle directly
                 }}
                 onUpdateStatus={handleUpdateOrderStatus}
               />

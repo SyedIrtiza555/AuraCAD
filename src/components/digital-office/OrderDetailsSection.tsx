@@ -159,19 +159,19 @@ export function OrderDetailsSection({
   const getStatusColor = (status: OrderStatus) => {
     switch (status) {
       case 'Pending': return 'yellow';
-      case 'Designing': return 'orange';
-      case 'Review': return 'blue';
-      case 'Completed': return 'green';
-      case 'Cancelled': return 'red';
+      case 'Designing': return 'brandCyan';
+      case 'Review': return 'indigo';
+      case 'Completed': return 'brandLime';
+      case 'Cancelled': return 'brandCrimson';
       default: return 'gray';
     }
   };
 
   const getEffortColor = (effort: Order['effort_level']) => {
     switch (effort) {
-      case 'Urgent': return 'red';
+      case 'Urgent': return 'brandCrimson';
       case 'High': return 'orange';
-      case 'Medium': return 'blue';
+      case 'Medium': return 'brandCyan';
       case 'Low': return 'gray';
       default: return 'gray';
     }
@@ -179,10 +179,10 @@ export function OrderDetailsSection({
 
   const getInvoiceColor = (status: InvoiceStatus) => {
     switch (status) {
-      case 'Paid': return 'green';
-      case 'Sent': return 'blue';
+      case 'Paid': return 'brandLime';
+      case 'Sent': return 'brandCyan';
       case 'Draft': return 'yellow';
-      case 'Overdue': return 'red';
+      case 'Overdue': return 'brandCrimson';
       case 'Cancelled': return 'gray';
       default: return 'gray';
     }
@@ -213,7 +213,7 @@ export function OrderDetailsSection({
               <Text size="xs" c="dimmed" fw={700}>-</Text>
 
               <Tooltip label="2. Client Code">
-                <Badge variant="filled" color="teal" size="sm" radius="md">
+                <Badge variant="filled" color="brandLime" c="dark.9" size="sm" radius="md">
                   {parsedCode.clientCode || prospect?.code || 'CLI'}
                 </Badge>
               </Tooltip>
@@ -221,7 +221,7 @@ export function OrderDetailsSection({
               <Text size="xs" c="dimmed" fw={700}>-</Text>
 
               <Tooltip label="3. Bespoke Order Name">
-                <Badge variant="outline" color="blue" size="sm" radius="md">
+                <Badge variant="outline" color="brandCyan" size="sm" radius="md">
                   {order.name}
                 </Badge>
               </Tooltip>
@@ -242,7 +242,7 @@ export function OrderDetailsSection({
                 {({ copied, copy }) => (
                   <Tooltip label={copied ? 'Copied PK' : 'Copy Order Code PK'}>
                     <ActionIcon 
-                      color={copied ? 'teal' : 'gray'} 
+                      color={copied ? 'brandLime' : 'gray'} 
                       variant="subtle" 
                       size="sm" 
                       onClick={copy}
@@ -262,7 +262,7 @@ export function OrderDetailsSection({
           <Group gap="xs" align="center">
             <Paper p="xs" px="md" radius="md" withBorder className="bg-slate-50 dark:bg-slate-800/80">
               <Text size="xs" c="dimmed" tt="uppercase" fw={700}>Order Value</Text>
-              <Text size="lg" fw={800} ff="monospace" c="blue">
+              <Text size="lg" fw={800} ff="monospace" c="brandCyan.5">
                 ${order.order_value.toLocaleString()}
               </Text>
             </Paper>
@@ -616,7 +616,7 @@ export function OrderDetailsSection({
                       <Button
                         type="submit"
                         size="xs"
-                        color="orange"
+                        color="brandCyan"
                         leftSection={<Send size={12} />}
                         disabled={!correctionMsg.trim()}
                       >
