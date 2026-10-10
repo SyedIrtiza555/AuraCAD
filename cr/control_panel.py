@@ -58,7 +58,8 @@ def run_vite():
         time.sleep(1.5)
         return
     print("Starting Vite in a new window...")
-    subprocess.Popen('npm run dev', cwd=os.path.join(os.path.dirname(__file__), '..'), shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    cwd = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    os.system(f'cd /d "{cwd}" && start "AuraCAD Vite Server" cmd /k "npm run dev"')
     print("Launched Vite!")
     time.sleep(1.5)
 
@@ -68,7 +69,8 @@ def run_pocketbase():
         time.sleep(1.5)
         return
     print("Starting PocketBase in a new window...")
-    subprocess.Popen('pocketbase serve', cwd=os.path.join(os.path.dirname(__file__), '..'), shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+    cwd = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+    os.system(f'cd /d "{cwd}" && start "AuraCAD PocketBase" cmd /k "pocketbase serve"')
     print("Launched PocketBase!")
     time.sleep(1.5)
 
@@ -94,7 +96,8 @@ def tunneling_menu():
         
         if choice == '1':
             print("Starting Cloudflare Tunnel...")
-            subprocess.Popen('cloudflared tunnel --url http://localhost:3000', shell=True, creationflags=subprocess.CREATE_NEW_CONSOLE)
+            cwd = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+            os.system(f'cd /d "{cwd}" && start "AuraCAD Cloudflare Tunnel" cmd /k "cloudflared tunnel --url http://localhost:3000"')
             print("Tunnel launched in new window! Check the new console for the URL.")
             input("\nPress ENTER to continue...")
         elif choice == '2':
