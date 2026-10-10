@@ -19,7 +19,8 @@ import {
   Modal,
   ScrollArea,
   NumberFormatter,
-  Grid
+  Grid,
+  Tooltip
 } from '@mantine/core';
 import { 
   X, 
@@ -370,6 +371,8 @@ export function OrderCard({
         onClose={onClose}
         position="right"
         size={getWidth()}
+        zIndex={1000}
+        overlayProps={{ backgroundOpacity: 0.45, blur: 4 }}
         title={TitleBar}
         styles={{ body: { padding: '16px', height: 'calc(100vh - 60px)', display: 'flex', flexDirection: 'column' } }}
       >
@@ -385,6 +388,8 @@ export function OrderCard({
         onClose={onClose}
         fullScreen={viewMode === 'fullscreen'}
         size={viewMode === 'center' ? getWidth() : undefined}
+        zIndex={1000}
+        overlayProps={{ backgroundOpacity: 0.45, blur: 4 }}
         title={TitleBar}
         styles={{ body: { padding: '16px', height: viewMode === 'fullscreen' ? 'calc(100vh - 60px)' : '70vh', display: 'flex', flexDirection: 'column' } }}
       >
