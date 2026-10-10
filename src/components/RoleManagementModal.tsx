@@ -30,8 +30,8 @@ import {
 interface RoleManagementModalProps {
   isOpen: boolean;
   onClose: () => void;
-  activeRoleView: 'all' | 'admin' | 'designer' | 'agent' | 'superagent';
-  onSelectRoleView: (roleView: 'all' | 'admin' | 'designer' | 'agent' | 'superagent') => void;
+  activeRoleView: 'all' | 'admin' | 'designer';
+  onSelectRoleView: (roleView: 'all' | 'admin' | 'designer') => void;
   onUserRoleChanged?: (updatedUser: PBUser) => void;
 }
 
@@ -235,22 +235,7 @@ export function RoleManagementModal({
                 </p>
               </button>
 
-              <button
-                onClick={() => onSelectRoleView('superagent')}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  activeRoleView === 'superagent'
-                    ? 'bg-indigo-500/10 border-indigo-500/60 ring-2 ring-indigo-500/20 shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs text-indigo-700 dark:text-indigo-300 mb-1">
-                  <Shield size={14} />
-                  <span>Superagent</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Senior manager: pipeline oversight, review & approvals
-                </p>
-              </button>
+
 
               <button
                 onClick={() => onSelectRoleView('admin')}
@@ -286,22 +271,7 @@ export function RoleManagementModal({
                 </p>
               </button>
 
-              <button
-                onClick={() => onSelectRoleView('agent')}
-                className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                  activeRoleView === 'agent'
-                    ? 'bg-emerald-500/10 border-emerald-500/60 ring-2 ring-emerald-500/20 shadow-xs'
-                    : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300'
-                }`}
-              >
-                <div className="flex items-center gap-1.5 font-bold text-xs text-emerald-700 dark:text-emerald-300 mb-1">
-                  <UserCheck size={14} />
-                  <span>Agent</span>
-                </div>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
-                  Client intake: prospect directory, new orders & feedback
-                </p>
-              </button>
+
             </div>
           </div>
 
@@ -368,8 +338,8 @@ export function RoleManagementModal({
                     >
                       <option value="admin">Admin</option>
                       <option value="designer">Designer</option>
-                      <option value="agent">Agent (Client Intake)</option>
-                      <option value="superagent">Superagent (Manager)</option>
+                      
+                      
                     </select>
                   </div>
                 </div>
@@ -441,7 +411,7 @@ export function RoleManagementModal({
                               ? 'bg-purple-500/10 text-purple-700 border-purple-300 dark:border-purple-700 dark:text-purple-300'
                               : 'bg-emerald-500/10 text-emerald-700 border-emerald-300 dark:border-emerald-700 dark:text-emerald-300'
                           }`}>
-                            {u.role === 'owner' ? 'OWNER (GOD)' : u.role === 'superagent' ? 'MANAGER' : u.role.toUpperCase()}
+                            {u.role === 'owner' ? 'OWNER (GOD)' : u.role.toUpperCase()}
                           </span>
                         </td>
 
@@ -454,8 +424,8 @@ export function RoleManagementModal({
                           >
                             <option value="admin">Admin</option>
                             <option value="designer">Designer</option>
-                            <option value="agent">Agent</option>
-                            <option value="superagent">Superagent (Manager)</option>
+                            
+                            
                             <option value="owner">Owner (God User)</option>
                           </select>
                         </td>

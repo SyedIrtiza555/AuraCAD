@@ -51,8 +51,8 @@ import { OrdersTable } from './components/creative-tim/blocks/orders-table';
 import { DesignersTableView } from './components/digital-office/DesignersTableView';
 import { ProspectsTableView } from './components/digital-office/ProspectsTableView';
 import { InvoicesTableView } from './components/digital-office/InvoicesTableView';
-import { OrderDetailDrawer } from './components/digital-office/OrderDetailDrawer';
-import { OrderDetailsSection } from './components/digital-office/OrderDetailsSection';
+
+import { OrderCard } from './components/digital-office/OrderCard';
 import { NewOrderModal } from './components/digital-office/NewOrderModal';
 import { NewDesignerModal } from './components/digital-office/NewDesignerModal';
 import { NewProspectModal } from './components/digital-office/NewProspectModal';
@@ -99,7 +99,7 @@ function getRoleFromUrl(): UserRole {
   if (typeof window === 'undefined') return 'owner';
   const params = new URLSearchParams(window.location.search);
   const qRole = params.get('role')?.toLowerCase();
-  const validRoles: UserRole[] = ['owner', 'admin', 'superagent', 'designer', 'agent'];
+  const validRoles: UserRole[] = ['owner', 'admin', 'designer'];
   
   if (qRole && validRoles.includes(qRole as UserRole)) {
     return qRole as UserRole;
@@ -195,8 +195,7 @@ export default function App() {
     // Default to role-appropriate starting tab
     if (newRole === 'designer') {
       setCurrentModule('orders');
-    } else if (newRole === 'agent') {
-      setCurrentModule('prospects');
+
     }
   };
 
@@ -221,7 +220,9 @@ export default function App() {
   const [isNewDesignerOpen, setIsNewDesignerOpen] = useState(false);
   const [isNewProspectOpen, setIsNewProspectOpen] = useState(false);
   const [preselectedProspect, setPreselectedProspect] = useState<Prospect | null>(null);
-  const [orderViewMode, setOrderViewMode] = useState<'table' | 'details'>('table');
+    const [orderViewMode, setOrderViewMode] = useState<'table' | 'details'>('table');
+  const [cardViewMode, setCardViewMode] = useState<'sidepeek' | 'center' | 'fullscreen' | 'inline'>('sidepeek');
+  const [cardSize, setCardSize] = useState<'narrow' | 'default' | 'wide'>('default');
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
 
   // Keep selectedOrder in sync when orders update
@@ -364,12 +365,7 @@ export default function App() {
       icon: <Crown size={14} className="text-amber-500" />,
       desc: 'Full studio governance, financials & settings'
     },
-    superagent: {
-      label: 'Superagent (Manager)',
-      badgeColor: 'indigo',
-      icon: <Shield size={14} className="text-indigo-400" />,
-      desc: 'Pipeline oversight, quality review & approvals'
-    },
+
     admin: {
       label: 'Admin (Operations)',
       badgeColor: 'blue',
@@ -381,13 +377,8 @@ export default function App() {
       badgeColor: 'purple',
       icon: <Compass size={14} className="text-purple-400" />,
       desc: 'Assigned CAD orders, stage updates & revisions'
-    },
-    agent: {
-      label: 'Agent (Client Intake)',
-      badgeColor: 'teal',
-      icon: <UserCheck size={14} className="text-emerald-400" />,
-      desc: 'Client portfolio, new bespoke orders & feedback'
     }
+
   };
 
   return (
@@ -491,7 +482,7 @@ export default function App() {
             </button>
           )}
 
-          {/* 3. Prospects Tab (Owner, Admin, Superagent, Agent) */}
+          {/* 3. Prospects Tab (Owner, Admin) */}
           {canViewProspects && (
             <button
               onClick={() => setCurrentModule('prospects')}
@@ -544,9 +535,9 @@ export default function App() {
         <div className="p-3 border-t border-slate-200 dark:border-[#1a1d28] space-y-2">
           {/* Active Role Card */}
           <div 
-            onClick={() => setIsRoleManagerOpen(true)}
-            className="w-full p-2 rounded-xl bg-slate-50 dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1a1d28] border border-slate-200 dark:border-[#262938] flex items-center justify-between transition-colors cursor-pointer text-left"
-            title="Click to Open PocketBase Role Management Console"
+            onClick={() => activeRole === 'owner' && setIsRoleManagerOpen(true)}
+            className={`w-full p-2 rounded-xl bg-slate-50 dark:bg-[#12141c] hover:bg-slate-100 dark:hover:bg-[#1a1d28] border border-slate-200 dark:border-[#262938] flex items-center justify-between transition-colors text-left ${activeRole === 'owner' ? 'cursor-pointer' : 'cursor-default'}`}
+            title={activeRole === 'owner' ? "Click to Open PocketBase Role Management Console" : ""}
           >
             <div className="flex items-center gap-2 min-w-0">
               <div className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-500 flex items-center justify-center shrink-0">
@@ -593,7 +584,7 @@ export default function App() {
             </span>
             <span className="text-slate-300 dark:text-slate-700">/</span>
             <span className="text-sm font-bold text-slate-900 dark:text-slate-100 capitalize">
-              {currentModule === 'orders' && (orderViewMode === 'details' && selectedOrder ? `Order: ${selectedOrder.order_code}` : (isDesigner ? `${currentDesigner.name} (${currentDesigner.code}) CAD Bench` : 'Bespoke Studio Orders'))}
+              {currentModule === 'orders' && (isDesigner ? `${currentDesigner.name} (${currentDesigner.code}) CAD Bench` : 'Bespoke Studio Orders')}
               {currentModule === 'designers' && 'CAD Design Specialists'}
               {currentModule === 'prospects' && 'Clients & Prospects'}
               {currentModule === 'invoices' && 'Invoices & Billing'}
@@ -642,7 +633,7 @@ export default function App() {
                   Active UI Role Perspective
                 </Menu.Label>
 
-                {(['owner', 'superagent', 'admin', 'designer', 'agent'] as UserRole[]).map((r) => {
+                {(['owner', 'admin', 'designer'] as UserRole[]).map((r) => {
                   const meta = roleMeta[r];
                   const isCurrent = activeRole === r;
                   return (
@@ -843,38 +834,12 @@ export default function App() {
         {/* Content View Container (Desktop Studio Ergonomics) */}
         <div className="flex-1 overflow-y-auto p-6">
           {currentModule === 'orders' && (
-            orderViewMode === 'details' && selectedOrder ? (
-              <div className="max-w-5xl mx-auto space-y-4">
-                <button
-                  onClick={() => setOrderViewMode('table')}
-                  className="text-xs text-[#29aae0] hover:underline flex items-center gap-1 cursor-pointer font-semibold mb-2"
-                >
-                  ← Back to Orders Table
-                </button>
-                <OrderDetailsSection 
-                  order={selectedOrder}
-                  designers={designers}
-                  prospects={prospects}
-                  invoices={invoices}
-                  corrections={corrections}
-                  statusHistory={statusHistory}
-                  onClose={() => setOrderViewMode('table')}
-                  onUpdateStatus={handleUpdateOrderStatus}
-                  onUpdateDesigner={handleUpdateOrderDesigner}
-                  onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
-                  onAddCorrection={handleAddCorrection}
-                  hideFinancials={isDesigner}
-                  hideClientContact={isDesigner}
-                />
-              </div>
-            ) : (
-              <OrdersTable 
-                orders={displayedOrders}
-                onSelectOrder={(ord) => handleSelectOrder(ord)}
-                onUpdateStatus={handleUpdateOrderStatus}
-                hideFinancials={isDesigner}
-              />
-            )
+            <OrdersTable 
+              orders={displayedOrders}
+              onSelectOrder={(ord) => handleSelectOrder(ord)}
+              onUpdateStatus={handleUpdateOrderStatus}
+              hideFinancials={isDesigner}
+            />
           )}
 
           {currentModule === 'designers' && canViewDesigners && (
@@ -910,21 +875,23 @@ export default function App() {
         </div>
       </main>
 
-      {/* Flyout Drawer for Order Inspector */}
-      <OrderDetailDrawer 
+      {/* Unified Order Card Modal/Drawer */}
+      <OrderCard 
         order={selectedOrder}
         designers={designers}
         prospects={prospects}
         invoices={invoices}
         corrections={corrections}
         statusHistory={statusHistory}
+        role={activeRole}
+        viewMode={cardViewMode}
+        size={cardSize}
+        onViewModeChange={(m) => setCardViewMode(m)}
         onClose={() => setSelectedOrder(null)}
         onUpdateStatus={handleUpdateOrderStatus}
         onUpdateDesigner={handleUpdateOrderDesigner}
         onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
         onAddCorrection={handleAddCorrection}
-        hideFinancials={isDesigner}
-        hideClientContact={isDesigner}
       />
 
       {/* Modals for Digital Office CRUD Operations */}
@@ -965,3 +932,4 @@ export default function App() {
     </div>
   );
 }
+
