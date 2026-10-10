@@ -51,6 +51,9 @@ import { OrdersTable } from './components/creative-tim/blocks/orders-table';
 import { DesignersTableView } from './components/digital-office/DesignersTableView';
 import { ProspectsTableView } from './components/digital-office/ProspectsTableView';
 import { InvoicesTableView } from './components/digital-office/InvoicesTableView';
+import { FloatingViewChanger, ViewMode } from './components/digital-office/FloatingViewChanger';
+import { UniversalDataView } from './components/digital-office/UniversalDataView';
+
 
 import { OrderCard } from './components/digital-office/OrderCard';
 import { NewOrderModal } from './components/digital-office/NewOrderModal';
@@ -221,6 +224,7 @@ export default function App() {
   const [isNewProspectOpen, setIsNewProspectOpen] = useState(false);
   const [preselectedProspect, setPreselectedProspect] = useState<Prospect | null>(null);
     const [orderViewMode, setOrderViewMode] = useState<'table' | 'details'>('table');
+  const [viewMode, setViewMode] = useState<ViewMode>('table');
   const [cardViewMode, setCardViewMode] = useState<'sidepeek' | 'center' | 'fullscreen' | 'inline'>('sidepeek');
   const [cardSize, setCardSize] = useState<'narrow' | 'default' | 'wide'>('default');
   const [isRoleManagerOpen, setIsRoleManagerOpen] = useState(false);
@@ -672,30 +676,7 @@ export default function App() {
             </Menu>
 
             {/* 3. Table vs Details Section Toggle (when in Orders) */}
-            {currentModule === 'orders' && selectedOrder && (
-              <div className="flex items-center p-0.5 rounded-xl bg-slate-100 dark:bg-[#12141c] border border-slate-200 dark:border-[#262938] text-xs">
-                <button
-                  onClick={() => setOrderViewMode('table')}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    orderViewMode === 'table'
-                      ? 'bg-white dark:bg-[#1a1d28] text-[#29aae0] shadow-xs'
-                      : 'text-slate-600 dark:text-[#8c8fa3] hover:text-slate-900'
-                  }`}
-                >
-                  Table View
-                </button>
-                <button
-                  onClick={() => setOrderViewMode('details')}
-                  className={`px-2.5 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
-                    orderViewMode === 'details'
-                      ? 'bg-white dark:bg-[#1a1d28] text-[#29aae0] shadow-xs'
-                      : 'text-slate-600 dark:text-[#8c8fa3] hover:text-slate-900'
-                  }`}
-                >
-                  Details Section
-                </button>
-              </div>
-            )}
+
 
             {/* 4. PocketBase Live Health Indicator */}
             <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-[#12141c] border border-slate-200 dark:border-[#262938] text-xs font-mono">
@@ -833,46 +814,64 @@ export default function App() {
 
         {/* Content View Container (Desktop Studio Ergonomics) */}
         <div className="flex-1 overflow-y-auto p-6">
-          {currentModule === 'orders' && (
-            <OrdersTable 
-              orders={displayedOrders}
-              onSelectOrder={(ord) => handleSelectOrder(ord)}
-              onUpdateStatus={handleUpdateOrderStatus}
-              hideFinancials={isDesigner}
-            />
-          )}
+          {viewMode === 'table' ? (
+            <>
+              {currentModule === 'orders' && (
+                <OrdersTable 
+                  orders={displayedOrders}
+                  onSelectOrder={(ord) => handleSelectOrder(ord)}
+                  onUpdateStatus={handleUpdateOrderStatus}
+                  hideFinancials={isDesigner}
+                />
+              )}
 
-          {currentModule === 'designers' && canViewDesigners && (
-            <DesignersTableView 
-              designers={designers}
-              orders={orders}
-              onOpenNewDesignerModal={() => setIsNewDesignerOpen(true)}
-              onSelectOrder={handleSelectOrder}
-              onDeleteDesigner={handleDeleteDesigner}
-            />
-          )}
+              {currentModule === 'designers' && canViewDesigners && (
+                <DesignersTableView 
+                  designers={designers}
+                  orders={orders}
+                  onOpenNewDesignerModal={() => setIsNewDesignerOpen(true)}
+                  onSelectOrder={handleSelectOrder}
+                  onDeleteDesigner={handleDeleteDesigner}
+                />
+              )}
 
-          {currentModule === 'prospects' && canViewProspects && (
-            <ProspectsTableView 
-              prospects={prospects}
-              orders={orders}
-              onOpenNewProspectModal={() => setIsNewProspectOpen(true)}
-              onSelectOrder={handleSelectOrder}
-              onDeleteProspect={handleDeleteProspect}
-              onCreateOrderForProspect={handleCreateOrderForProspect}
-            />
-          )}
+              {currentModule === 'prospects' && canViewProspects && (
+                <ProspectsTableView 
+                  prospects={prospects}
+                  orders={orders}
+                  onOpenNewProspectModal={() => setIsNewProspectOpen(true)}
+                  onSelectOrder={handleSelectOrder}
+                  onDeleteProspect={handleDeleteProspect}
+                  onCreateOrderForProspect={handleCreateOrderForProspect}
+                />
+              )}
 
-          {currentModule === 'invoices' && canViewInvoices && (
-            <InvoicesTableView 
-              invoices={invoices}
-              orders={orders}
-              prospects={prospects}
-              onSelectOrder={handleSelectOrder}
-              onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
+              {currentModule === 'invoices' && canViewInvoices && (
+                <InvoicesTableView 
+                  invoices={invoices}
+                  orders={orders}
+                  prospects={prospects}
+                  onSelectOrder={handleSelectOrder}
+                  onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
+                />
+              )}
+            </>
+          ) : (
+            <UniversalDataView 
+              module={currentModule}
+              viewMode={viewMode}
+              data={
+                currentModule === 'orders' ? displayedOrders :
+                currentModule === 'designers' ? designers :
+                currentModule === 'prospects' ? prospects :
+                invoices
+              }
+              onItemClick={(item) => currentModule === 'orders' ? handleSelectOrder(item) : null}
             />
           )}
         </div>
+      
+        <FloatingViewChanger currentView={viewMode} onChange={setViewMode} />
       </main>
 
       {/* Unified Order Card Modal/Drawer */}
