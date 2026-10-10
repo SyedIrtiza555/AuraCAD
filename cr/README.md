@@ -56,3 +56,7 @@ To maintain its effectiveness, the Context Room adheres to these immutable rules
 ### Rule 4: The Checkpoint Protocol
 - **Rule**: Before a major development session concludes, `recap.md` must be updated with the current state of the application.
 - **Usability**: Guarantees that the project never enters a state of "abandoned confusion", ensuring a smooth handoff between human sessions or AI agents.
+
+### Rule 5: Token-Optimized Communication (TOON & CSV)
+- **Rule**: Any large relational objects, datasets, or logs passed to or stored for the AI MUST be formatted in CSV. Deep configuration objects must use TOON (Token-Optimized Object Notation) instead of bloated JSON. (See 	oon_spec.md).
+- **Usability**: Drastically reduces token consumption, prevents context-window exhaustion, and speeds up AI reading/generation times by eliminating whitespace, markdown table pipes, and JSON quotation bloat.
